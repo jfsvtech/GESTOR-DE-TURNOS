@@ -1,0 +1,31 @@
+@model Tenant
+@{
+    ViewData["Title"] = "Negocio";
+    var slug = ViewData["TenantSlug"] as string;
+}
+
+<h1 class="section-title mb-1">Mi negocio</h1>
+<p class="page-sub mb-4">Sube la foto/portada que verán tus clientes al entrar.</p>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card"><div class="card-body">
+            @if (!string.IsNullOrEmpty(Model.FotoUrl))
+            {
+                <img src="@Model.FotoUrl" alt="Foto del negocio" class="img-fluid rounded-3 mb-3" style="max-height:280px;width:100%;object-fit:cover" />
+            }
+            else
+            {
+                <div class="alert alert-light border text-center py-5 mb-3"><i class="bi bi-image fs-1 d-block text-muted"></i>Aún no has subido una foto.</div>
+            }
+            <form asp-action="NegocioFoto" asp-route-slug="@slug" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <label class="form-label">Foto / portada (jpg, png, webp · máx 8 MB)</label>
+                <div class="input-group">
+                    <input type="file" name="foto" accept="image/*" class="form-control" required />
+                    <button class="btn btn-primary"><i class="bi bi-upload me-1"></i>Subir</button>
+                </div>
+            </form>
+        </div></div>
+    </div>
+</div>

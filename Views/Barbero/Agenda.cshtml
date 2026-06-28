@@ -1,0 +1,156 @@
+@model List<TurnoDetalle>
+@{
+    ViewData["Title"] = "Mi agenda";
+    var slug = ViewData["TenantSlug"] as string;
+    var fecha = (DateTime)ViewData["Fecha"]!;
+    var bloqueos = ViewBag.Bloqueos as List<Bloqueo> ?? new List<Bloqueo>();
+    var notificaciones = ViewBag.Notificaciones as List<Notificacion> ?? new List<Notificacion>();
+    var ingresoDia = Model.Where(t => t.Estado == EstadoTurno.Completado).Sum(t => t.Precio);
+}
+
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+    <div>
+        <h1 class="section-title mb-0">Mi agenda</h1>
+        <p class="page-sub mb-0">@fecha.ToString("dddd dd 'de' MMMM, yyyy")</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a class="btn btn-primary" asp-action="NuevoTurno" asp-route-slug="@slug"><i class="bi bi-plus-lg me-1"></i>Nuevo turno</a>
+        <a class="btn btn-outline-primary" asp-action="Bloquear" asp-route-slug="@slug"><i class="bi bi-slash-circle me-1"></i>Bloquear</a>
+    </div>
+</div>
+
+@if (notificaciones.Any())
+{
+    <div class="notification-stack mb-3">
+        @foreach (var n in notificaciones)
+        {
+            <div class="notification-item">
+                <span class="notification-icon"><i class="bi bi-bell"></i></span>
+                <div class="flex-grow-1">
+                    <div class="fw-semibold">@n.Titulo</div>
+                    <div class="small text-muted">@n.Mensaje</div>
+                </div>
+                <form asp-action="LeerNotificacion" asp-route-slug="@slug" asp-route-id="@n.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="fecha" value="@fecha.ToString("yyyy-MM-dd")" />
+                    <button class="btn btn-sm btn-outline-primary">Visto</button>
+                </form>
+            </div>
+        }
+    </div>
+}
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <div class="btn-group">
+        <a class="btn btn-outline-primary" asp-action="Agenda" asp-route-slug="@slug" asp-route-fecha="@fecha.AddDays(-1).ToString("yyyy-MM-dd")"><i class="bi bi-chevron-left"></i></a>
+        <a class="btn btn-outline-primary" asp-action="Agenda" asp-route-slug="@slug" asp-route-fecha="@DateTime.Today.ToString("yyyy-MM-dd")">Hoy</a>
+        <a class="btn btn-outline-primary" asp-action="Agenda" asp-route-slug="@slug" asp-route-fecha="@fecha.AddDays(1).ToString("yyyy-MM-dd")"><i class="bi bi-chevron-right"></i></a>
+    </div>
+    <form method="get" asp-action="Agenda" asp-route-slug="@slug">
+        <input type="date" name="fecha" value="@fecha.ToString("yyyy-MM-dd")" class="form-control" onchange="this.form.submit()" />
+    </form>
+    <span class="chip ms-auto"><i class="bi bi-cash-coin"></i> Día: $@ingresoDia.ToString("#,##0")</span>
+</div>
+
+<div class="mb-3">
+    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#quickBlock">
+        <i class="bi bi-slash-circle me-1"></i>Bloquear un rato (almuerzo, etc.)
+    </button>
+    <div class="collapse mt-2" id="quickBlock">
+        <div class="card"><div class="card-body">
+            <form asp-action="BloquearDia" asp-route-slug="@slug" method="post" class="row g-2 align-items-end">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="fecha" value="@fecha.ToString("yyyy-MM-dd")" />
+                <div class="col-auto">
+                    <label class="form-label">Desde</label>
+                    <input type="time" name="horaInicio" value="13:00" class="form-control" />
+                </div>
+                <div class="col-auto">
+                    <label class="form-label">Hasta</label>
+                    <input type="time" name="horaFin" value="14:00" class="form-control" />
+                </div>
+                <div class="col">
+                    <label class="form-label">Motivo</label>
+                    <input type="text" name="motivo" placeholder="Almuerzo" class="form-control" />
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-primary">Bloquear</button>
+                </div>
+            </form>
+        </div></div>
+    </div>
+</div>
+
+@if (bloqueos.Any())
+{
+    <div class="mb-3 d-flex flex-wrap gap-2">
+        @foreach (var b in bloqueos)
+        {
+            <span class="badge bg-secondary d-inline-flex align-items-center gap-2">
+                <i class="bi bi-slash-circle"></i>@b.FechaHoraInicio.ToString("HH:mm")–@b.FechaHoraFin.ToString("HH:mm") @b.Motivo
+                <form asp-action="EliminarBloqueo" asp-route-slug="@slug" asp-route-id="@b.Id" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="volverFecha" value="@fecha.ToString("yyyy-MM-dd")" />
+                    <button class="btn btn-sm btn-link text-white p-0 border-0" title="Quitar"><i class="bi bi-x-lg"></i></button>
+                </form>
+            </span>
+        }
+    </div>
+}
+
+@if (Model.Count == 0)
+{
+    <div class="card"><div class="card-body text-center py-5 text-muted">
+        <div class="display-6 mb-2"><i class="bi bi-calendar-check"></i></div>No tienes turnos para este día.
+    </div></div>
+}
+else
+{
+    <div class="d-flex flex-column gap-2">
+        @foreach (var t in Model)
+        {
+            <div class="turno-item">
+                <div class="row align-items-center g-2">
+                    <div class="col-auto text-center" style="min-width:64px">
+                        <div class="turno-time">@t.FechaHoraInicio.ToString("HH:mm")</div>
+                        <small class="text-muted">@t.DuracionMinutos min</small>
+                    </div>
+                    <div class="col">
+                        <div class="fw-semibold">@t.ClienteNombre
+                            <span class="badge @t.Estado.Badge() ms-1">@t.Estado.Display()</span>
+                        </div>
+                        <div class="small text-muted">
+                            <i class="bi bi-scissors me-1"></i>@t.ServicioNombre ·
+                            <i class="bi bi-telephone me-1"></i>@(t.ClienteTelefono ?? "—") ·
+                            <span class="fw-semibold text-dark">$@t.Precio.ToString("#,##0")</span>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(t.Notas))
+                        {
+                            <div class="small fst-italic text-secondary"><i class="bi bi-chat-left-text me-1"></i>@t.Notas</div>
+                        }
+                    </div>
+                    <div class="col-auto">
+                        @if (t.Estado != EstadoTurno.Completado && t.Estado != EstadoTurno.Cancelado)
+                        {
+                            <div class="btn-group btn-group-sm">
+                                @foreach (var e in new[] { EstadoTurno.Completado, EstadoTurno.NoShow, EstadoTurno.Cancelado })
+                                {
+                                    <form asp-action="CambiarEstado" asp-route-slug="@slug" asp-route-id="@t.Id" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="estado" value="@((int)e)" />
+                                        <input type="hidden" name="fecha" value="@fecha.ToString("yyyy-MM-dd")" />
+                                        <button class="btn btn-outline-primary">@e.Display()</button>
+                                    </form>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="text-muted small">—</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

@@ -1,0 +1,117 @@
+@model BarberoFormVm
+@using GeneradorTurnos.Models
+@{
+    ViewData["Title"] = Model.Id == 0 ? "Nuevo profesional" : "Editar profesional";
+    var slug = ViewData["TenantSlug"] as string;
+    var servicios = ViewBag.Servicios as List<Servicio> ?? new List<Servicio>();
+    var fotoActual = ViewBag.FotoActual as string;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7">
+        <h1 class="h4 mb-3">@ViewData["Title"]</h1>
+        <div class="card shadow-sm"><div class="card-body">
+            <form asp-action="ProfesionalGuardar" asp-route-slug="@slug" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    @if (!string.IsNullOrEmpty(fotoActual))
+                    {
+                        <img src="@fotoActual" class="pro-photo" alt="Foto" />
+                    }
+                    else
+                    {
+                        <span class="avatar"><i class="bi bi-person"></i></span>
+                    }
+                    <div class="flex-grow-1">
+                        <label class="form-label">Foto del profesional</label>
+                        <input type="file" name="foto" accept="image/*" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Nombre" class="form-label"></label>
+                        <input asp-for="Nombre" class="form-control" />
+                        <span asp-validation-for="Nombre" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Cedula" class="form-label"></label>
+                        @if (Model.Id != 0)
+                        {
+                            <input asp-for="Cedula" class="form-control" readonly />
+                        }
+                        else
+                        {
+                            <input asp-for="Cedula" class="form-control" />
+                        }
+                        <span asp-validation-for="Cedula" class="text-danger small"></span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Telefono" class="form-label"></label>
+                        <input asp-for="Telefono" class="form-control" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Email" class="form-label"></label>
+                        <input asp-for="Email" class="form-control" />
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Password" class="form-label"></label>
+                    <input asp-for="Password" type="password" class="form-control" autocomplete="new-password" />
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+
+                <label class="form-label">Servicios que presta</label>
+                <div class="row row-cols-1 row-cols-sm-2 g-2 mb-3">
+                    @foreach (var s in servicios)
+                    {
+                        <div class="col">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="ServicioIds" value="@s.Id"
+                                       id="serv-@s.Id" @(Model.ServicioIds.Contains(s.Id) ? "checked" : "") />
+                                <label class="form-check-label" for="serv-@s.Id">
+                                    @s.Nombre <span class="text-muted small">(@s.DuracionMinutos min)</span>
+                                </label>
+                            </div>
+                        </div>
+                    }
+                    @if (servicios.Count == 0)
+                    {
+                        <div class="col"><span class="text-muted small">Primero crea servicios.</span></div>
+                    }
+                </div>
+
+                <label class="form-label">Comisión del dueño</label>
+                <div class="row g-2 mb-3">
+                    <div class="col-sm-7">
+                        <select asp-for="ComisionTipo" class="form-select"
+                                asp-items="Html.GetEnumSelectList<ComisionTipo>()"></select>
+                        <div class="form-text">Porcentaje: el dueño recibe X% de cada turno realizado. Fijo mensual: cuota fija del barbero al dueño.</div>
+                    </div>
+                    <div class="col-sm-5">
+                        <div class="input-group">
+                            <input asp-for="ComisionValor" type="text" inputmode="numeric" class="form-control js-money"
+                                   value="@Model.ComisionValor.ToString("0", System.Globalization.CultureInfo.InvariantCulture)" />
+                            <span class="input-group-text">% / $</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    <input asp-for="Activo" class="form-check-input" />
+                    <label asp-for="Activo" class="form-check-label">Activo</label>
+                </div>
+
+                <button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar</button>
+                <a class="btn btn-link" asp-action="Profesionales" asp-route-slug="@slug">Cancelar</a>
+            </form>
+        </div></div>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -1,0 +1,50 @@
+@{
+    ViewData["Title"] = "Configurar negocio";
+    var slug = ViewData["TenantSlug"] as string;
+    var publicUrl = ViewBag.PublicUrl as string;
+    var qrUrl = ViewBag.QrUrl as string;
+    bool servicios = ViewBag.TieneServicios == true;
+    bool trabajadores = ViewBag.TieneTrabajadores == true;
+    bool foto = ViewBag.TieneFoto == true;
+}
+
+<div class="onboarding-hero mb-4">
+    <div>
+        <span class="chip">Inicio guiado</span>
+        <h1>Deja tu negocio listo para recibir reservas</h1>
+        <p>Completa estos pasos y comparte el QR con tus clientes.</p>
+    </div>
+    <img src="@qrUrl" alt="QR del negocio" />
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="setup-list">
+            <a class="setup-step @(servicios ? "done" : "")" asp-action="Servicios" asp-route-slug="@slug">
+                <i class="bi @(servicios ? "bi-check-circle-fill" : "bi-circle")"></i>
+                <span><strong>Crear servicios</strong><small>Define duración, precio y estado.</small></span>
+            </a>
+            <a class="setup-step @(trabajadores ? "done" : "")" asp-action="Profesionales" asp-route-slug="@slug">
+                <i class="bi @(trabajadores ? "bi-check-circle-fill" : "bi-circle")"></i>
+                <span><strong>Agregar trabajadores</strong><small>Correos, servicios, comisiones y fotos.</small></span>
+            </a>
+            <a class="setup-step" asp-action="Profesionales" asp-route-slug="@slug">
+                <i class="bi bi-clock"></i>
+                <span><strong>Configurar horarios</strong><small>Define cuándo puede reservar cada trabajador.</small></span>
+            </a>
+            <a class="setup-step @(foto ? "done" : "")" asp-action="Negocio" asp-route-slug="@slug">
+                <i class="bi @(foto ? "bi-check-circle-fill" : "bi-image")"></i>
+                <span><strong>Subir foto del negocio</strong><small>Mejora la página pública y confianza del cliente.</small></span>
+            </a>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card h-100"><div class="card-body">
+            <h2 class="h5">Link público</h2>
+            <p class="page-sub">Compártelo en redes, WhatsApp o recepción.</p>
+            <input class="form-control mb-3" value="@publicUrl" readonly onclick="this.select()" />
+            <img class="qr-preview" src="@qrUrl" alt="QR del negocio" />
+            <a class="btn btn-primary w-100 mt-3" href="@publicUrl" target="_blank"><i class="bi bi-box-arrow-up-right"></i> Abrir página pública</a>
+        </div></div>
+    </div>
+</div>

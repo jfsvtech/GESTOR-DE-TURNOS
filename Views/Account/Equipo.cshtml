@@ -1,0 +1,55 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Acceso equipo";
+    Layout = "_AuthLayout";
+    var slug = ViewData["TenantSlug"] as string;
+    var nombre = ViewData["TenantNombre"] as string;
+}
+
+<div class="auth-wrap">
+    <div class="auth-side">
+        <div>
+            <span class="chip bg-white mb-3" style="color:#6d28d9">@nombre</span>
+            <h1 class="display-6 fw-bold">Panel del equipo</h1>
+            <p class="fs-5 opacity-75 mt-2">Agenda, servicios y resultados.</p>
+            <div class="feature"><i class="bi bi-calendar-week"></i><div><strong>Tu agenda en tiempo real</strong></div></div>
+            <div class="feature"><i class="bi bi-graph-up-arrow"></i><div><strong>Ganancias y estadísticas</strong></div></div>
+        </div>
+    </div>
+    <div class="auth-form">
+        <div class="auth-card">
+            <h2 class="h3 fw-bold mb-1">Acceso del equipo</h2>
+            <p class="page-sub mb-4">Para barberos y dueños (con cédula).</p>
+
+            <form asp-action="Equipo" asp-route-slug="@slug" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="ReturnUrl" />
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Cedula" class="form-label"></label>
+                    <div class="input-icon"><i class="bi bi-person-vcard"></i>
+                        <input asp-for="Cedula" class="form-control form-control-lg" autofocus />
+                    </div>
+                    <span asp-validation-for="Cedula" class="text-danger small"></span>
+                </div>
+                <div class="mb-4">
+                    <label asp-for="Password" class="form-label"></label>
+                    <div class="input-icon"><i class="bi bi-lock"></i>
+                        <input asp-for="Password" class="form-control form-control-lg" />
+                    </div>
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg w-100">Entrar</button>
+            </form>
+
+            <div class="text-center mt-4">
+                <a class="small text-muted" asp-action="Login" asp-route-slug="@slug">
+                    <i class="bi bi-arrow-left me-1"></i>Soy cliente
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

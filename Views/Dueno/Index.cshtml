@@ -1,0 +1,217 @@
+@model DashboardDuenoVm
+@{
+    ViewData["Title"] = "Panel";
+    var slug = ViewData["TenantSlug"] as string;
+    var labels = Model.IngresosPorDia.Select(x => x.Fecha.ToString("dd/MM")).ToList();
+    var ingresos = Model.IngresosPorDia.Select(x => x.Valor).ToList();
+    var servLabels = Model.ServiciosTop.Select(x => x.Etiqueta).ToList();
+    var servCant = Model.ServiciosTop.Select(x => x.Cantidad).ToList();
+}
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+        <h1 class="section-title mb-0">Panel general</h1>
+        <p class="page-sub mb-0">Resumen del @Model.Desde.ToString("dd MMM") al @Model.Hasta.ToString("dd MMM yyyy")</p>
+    </div>
+    <a class="btn btn-success" asp-action="Exportar" asp-route-slug="@slug"
+       asp-route-desde="@Model.Desde.ToString("yyyy-MM-dd")" asp-route-hasta="@Model.Hasta.ToString("yyyy-MM-dd")">
+        <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
+    </a>
+</div>
+
+<form method="get" asp-action="Index" asp-route-slug="@slug" class="row g-2 align-items-end mb-4">
+    <div class="col-auto"><label class="form-label">Desde</label><input type="date" name="desde" value="@Model.Desde.ToString("yyyy-MM-dd")" class="form-control" /></div>
+    <div class="col-auto"><label class="form-label">Hasta</label><input type="date" name="hasta" value="@Model.Hasta.ToString("yyyy-MM-dd")" class="form-control" /></div>
+    <div class="col-auto"><button class="btn btn-primary">Filtrar</button></div>
+</form>
+
+<div class="row g-3 mb-4">
+    <partial name="_Stat" model='("Ingresos", "$" + Model.Resumen.IngresosTotales.ToString("#,##0"), "bi-cash-stack", "green")' />
+    <partial name="_Stat" model='("Gastos", "$" + Model.Gastos.ToString("#,##0"), "bi-receipt-cutoff", "amber")' />
+    <partial name="_Stat" model='("Utilidad", "$" + Model.Utilidad.ToString("#,##0"), "bi-graph-up-arrow", (Model.Utilidad >= 0 ? "green" : "red"))' />
+    <partial name="_Stat" model='("Cortes completados", Model.Resumen.TurnosCompletados.ToString(), "bi-check2-circle", "violet")' />
+</div>
+
+<div class="row g-3 mb-4">
+    <partial name="_Stat" model='("Clientes unicos", Model.Resumen.ClientesUnicos.ToString(), "bi-people", "blue")' />
+    <partial name="_Stat" model='("Cancelados", Model.Resumen.TurnosCancelados.ToString(), "bi-x-circle", "red")' />
+    <div class="col-6 col-lg-6 d-flex align-items-center">
+        <a class="btn btn-outline-primary w-100" asp-action="Gastos" asp-route-slug="@slug"><i class="bi bi-receipt me-1"></i>Gestionar gastos</a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-8">
+        <div class="card h-100"><div class="card-body">
+            <h2 class="h6 mb-3">Ingresos por dia</h2>
+            <canvas id="chartIngresos" height="110"></canvas>
+        </div></div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100"><div class="card-body">
+            <h2 class="h6 mb-3">Servicios mas vendidos</h2>
+            <canvas id="chartServ" height="180"></canvas>
+        </div></div>
+    </div>
+</div>
+
+<section class="owner-income-panel mb-4">
+    <div class="section-heading">
+        <div>
+            <h2 class="section-title h4 mb-1"><i class="bi bi-people me-1"></i>Ingresos por barbero</h2>
+            <p class="page-sub mb-0">Ventas, comisiones, estados y productividad por trabajador.</p>
+        </div>
+        <span class="chip"><i class="bi bi-cash-stack"></i> Total: $@Model.Barberos.Sum(x => x.Ingresos).ToString("#,##0")</span>
+    </div>
+
+    <div class="barber-income-grid mb-3">
+        @foreach (var b in Model.Barberos)
+        {
+            var participacion = Model.Resumen.IngresosTotales == 0 ? 0 : Math.Round(b.Ingresos * 100m / Model.Resumen.IngresosTotales, 0);
+            <article class="barber-income-card">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div>
+                        <span class="income-eyebrow">Profesional</span>
+                        <h3>@b.Nombre</h3>
+                    </div>
+                    <span class="income-share">@participacion%</span>
+                </div>
+                <div class="income-main">
+                    <span>Ingresos generados</span>
+                    <strong>$@b.Ingresos.ToString("#,##0")</strong>
+                </div>
+                <div class="income-metrics">
+                    <span><strong>@b.Completados</strong><small>Completados</small></span>
+                    <span><strong>$@b.TicketPromedio.ToString("#,##0")</strong><small>Ticket prom.</small></span>
+                    <span><strong>@b.TasaFinalizacion%</strong><small>Efectividad</small></span>
+                </div>
+                <div class="income-status-row">
+                    <span>Confirmados: <strong>@b.Confirmados</strong></span>
+                    <span>Pendientes: <strong>@b.Pendientes</strong></span>
+                    <span>Cancelados: <strong>@b.Cancelados</strong></span>
+                    <span>No asistio: <strong>@b.NoShow</strong></span>
+                </div>
+                <div class="income-split">
+                    <span>Dueno recibe <strong>$@b.ComisionDueno.ToString("#,##0")</strong></span>
+                    <span>Barbero neto <strong>$@b.NetoBarbero.ToString("#,##0")</strong></span>
+                </div>
+            </article>
+        }
+    </div>
+
+    <div class="card mb-4"><div class="card-body">
+        <h2 class="h6 mb-3"><i class="bi bi-table me-1"></i>Detalle financiero por profesional</h2>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Profesional</th>
+                        <th class="text-center">Total</th>
+                        <th class="text-center">Completados</th>
+                        <th class="text-center">Pend./Conf.</th>
+                        <th class="text-center">Cancel./No show</th>
+                        <th class="text-end">Ingresos</th>
+                        <th class="text-end">Ticket</th>
+                        <th class="text-center">Comision</th>
+                        <th class="text-end">Recibe dueno</th>
+                        <th class="text-end">Neto barbero</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var b in Model.Barberos)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@b.Nombre</td>
+                            <td class="text-center">@b.Total</td>
+                            <td class="text-center">@b.Completados</td>
+                            <td class="text-center">@b.Pendientes / @b.Confirmados</td>
+                            <td class="text-center">@b.Cancelados / @b.NoShow</td>
+                            <td class="text-end">$@b.Ingresos.ToString("#,##0")</td>
+                            <td class="text-end">$@b.TicketPromedio.ToString("#,##0")</td>
+                            <td class="text-center"><span class="badge bg-light text-dark">@b.ComisionTexto</span></td>
+                            <td class="text-end text-success fw-semibold">$@b.ComisionDueno.ToString("#,##0")</td>
+                            <td class="text-end fw-bold">$@b.NetoBarbero.ToString("#,##0")</td>
+                        </tr>
+                    }
+                    @if (Model.Barberos.Count == 0)
+                    {
+                        <tr><td colspan="10" class="text-center text-muted py-3">Sin datos.</td></tr>
+                    }
+                    @if (Model.Barberos.Count > 0)
+                    {
+                        <tr class="fw-bold table-light">
+                            <td>Total periodo</td>
+                            <td></td>
+                            <td class="text-center">@Model.Barberos.Sum(x => x.Completados)</td>
+                            <td></td><td></td>
+                            <td class="text-end">$@Model.Barberos.Sum(x => x.Ingresos).ToString("#,##0")</td>
+                            <td></td><td></td>
+                            <td class="text-end text-success">$@Model.Barberos.Sum(x => x.ComisionDueno).ToString("#,##0")</td>
+                            <td class="text-end">$@Model.Barberos.Sum(x => x.NetoBarbero).ToString("#,##0")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div></div>
+</section>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-4">
+        <div class="card h-100"><div class="card-body">
+            <h2 class="h6 mb-3">Ocupacion por trabajador</h2>
+            @foreach (var o in Model.OcupacionPorBarbero)
+            {
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between small"><span>@o.Etiqueta</span><strong>@o.Valor%</strong></div>
+                    <div class="progress progress-thin"><div class="progress-bar" style="width:@Math.Min(100, o.Valor)%"></div></div>
+                </div>
+            }
+            <div class="small text-muted mt-3">Horas muertas estimadas: <strong>@Model.HorasMuertasEstimadas.ToString("0.#")</strong></div>
+        </div></div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100"><div class="card-body">
+            <h2 class="h6 mb-3">Clientes recurrentes</h2>
+            @if (!Model.ClientesRecurrentes.Any()) { <p class="page-sub">Aun no hay recurrencia suficiente.</p> }
+            @foreach (var c in Model.ClientesRecurrentes)
+            {
+                <div class="d-flex justify-content-between border-bottom py-2 small">
+                    <span>@c.Etiqueta</span><strong>@c.Cantidad visitas</strong>
+                </div>
+            }
+        </div></div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100"><div class="card-body">
+            <h2 class="h6 mb-3">Cancelaciones por dia</h2>
+            @if (!Model.CancelacionesPorDia.Any()) { <p class="page-sub">Sin cancelaciones en el periodo.</p> }
+            @foreach (var c in Model.CancelacionesPorDia)
+            {
+                <div class="d-flex justify-content-between border-bottom py-2 small">
+                    <span>@c.Fecha.ToString("dd/MM")</span><strong>@c.Cantidad</strong>
+                </div>
+            }
+            <div class="small text-muted mt-3">Servicio mas rentable: <strong>@Model.ServicioMasRentable</strong></div>
+        </div></div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    new Chart(document.getElementById('chartIngresos'), {
+        type: 'line',
+        data: { labels: @Json.Serialize(labels),
+            datasets: [{ label: 'Ingresos', data: @Json.Serialize(ingresos),
+                borderColor: '#14b8a6', backgroundColor: 'rgba(20,184,166,.14)', fill: true, tension: .35, borderWidth: 2 }] },
+        options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    });
+    new Chart(document.getElementById('chartServ'), {
+        type: 'doughnut',
+        data: { labels: @Json.Serialize(servLabels),
+            datasets: [{ data: @Json.Serialize(servCant),
+                backgroundColor: ['#14b8a6','#2563eb','#f59e0b','#10b981','#ef4444','#8b5cf6'] }] },
+        options: { plugins: { legend: { position: 'bottom' } } }
+    });
+</script>
+}

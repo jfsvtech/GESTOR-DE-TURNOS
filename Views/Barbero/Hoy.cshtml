@@ -1,0 +1,91 @@
+@model HoyBarberoVm
+@{
+    ViewData["Title"] = "Hoy";
+    var slug = ViewData["TenantSlug"] as string;
+}
+
+<div class="today-hero mb-3">
+    <div>
+        <span class="chip"><i class="bi bi-lightning-charge"></i> Jornada de hoy</span>
+        <h1>@DateTime.Now.ToString("HH:mm")</h1>
+        <p>@Model.Fecha.ToString("dddd dd 'de' MMMM")</p>
+    </div>
+    <a class="btn btn-light" asp-action="NuevoTurno" asp-route-slug="@slug"><i class="bi bi-plus-lg"></i> Nuevo turno</a>
+</div>
+
+@if (Model.Proximo is null)
+{
+    <div class="card mb-3"><div class="card-body text-center py-5">
+        <div class="display-6 text-muted"><i class="bi bi-calendar-check"></i></div>
+        <h2 class="h5 mt-2">No tienes próximos turnos hoy</h2>
+        <p class="page-sub mb-0">Tu agenda está despejada por ahora.</p>
+    </div></div>
+}
+else
+{
+    var t = Model.Proximo;
+    <div class="next-appointment mb-3">
+        <div>
+            <span class="small text-muted">Próximo cliente</span>
+            <h2>@t.ClienteNombre</h2>
+            <p><i class="bi bi-clock"></i> @t.FechaHoraInicio.ToString("HH:mm") - @t.ServicioNombre - $@t.Precio.ToString("#,##0")</p>
+            @if (!string.IsNullOrWhiteSpace(t.ClienteTelefono))
+            {
+                <p><i class="bi bi-telephone"></i> @t.ClienteTelefono</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(t.Notas))
+            {
+                <p><i class="bi bi-chat-left-text"></i> @t.Notas</p>
+            }
+        </div>
+        <div class="today-actions">
+            <form asp-action="CambiarEstado" asp-route-slug="@slug" asp-route-id="@t.Id" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="estado" value="@((int)EstadoTurno.Completado)" />
+                <button class="btn btn-success btn-lg w-100"><i class="bi bi-check2-circle"></i> Finalizar</button>
+            </form>
+            <form asp-action="CambiarEstado" asp-route-slug="@slug" asp-route-id="@t.Id" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="estado" value="@((int)EstadoTurno.NoShow)" />
+                <button class="btn btn-outline-danger btn-lg w-100"><i class="bi bi-person-x"></i> No asistió</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <div class="card h-100"><div class="card-body">
+                <h2 class="h6 mb-3">Agenda de hoy</h2>
+                <div class="d-flex flex-column gap-2">
+                    @foreach (var item in Model.Agenda)
+                    {
+                        <div class="turno-item d-flex justify-content-between align-items-center">
+                            <div><strong>@item.FechaHoraInicio.ToString("HH:mm")</strong> @item.ClienteNombre<br><span class="small text-muted">@item.ServicioNombre</span></div>
+                            <span class="badge @item.Estado.Badge()">@item.Estado.Display()</span>
+                        </div>
+                    }
+                </div>
+            </div></div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card h-100"><div class="card-body">
+                <h2 class="h6 mb-3">Historial de @t.ClienteNombre</h2>
+                @if (!Model.HistorialCliente.Any())
+                {
+                    <p class="page-sub">Primer registro de este cliente.</p>
+                }
+                else
+                {
+                    <div class="d-flex flex-column gap-2">
+                        @foreach (var h in Model.HistorialCliente)
+                        {
+                            <div class="small border-bottom pb-2">
+                                <strong>@h.FechaHoraInicio.ToString("dd/MM/yyyy")</strong> - @h.ServicioNombre - @h.Estado.Display()
+                            </div>
+                        }
+                    </div>
+                }
+            </div></div>
+        </div>
+    </div>
+}

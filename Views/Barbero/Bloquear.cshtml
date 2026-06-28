@@ -1,0 +1,63 @@
+@model BloqueoVm
+@{
+    ViewData["Title"] = "Bloquear agenda";
+    var slug = ViewData["TenantSlug"] as string;
+    var futuros = ViewBag.Futuros as List<Bloqueo> ?? new List<Bloqueo>();
+}
+
+<h1 class="section-title mb-1">Bloquear agenda</h1>
+<p class="page-sub mb-4">Reserva espacios no disponibles (descanso, permiso, etc.). Nadie podrá reservar en ese rango.</p>
+
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="card"><div class="card-body">
+            <form asp-action="Bloquear" asp-route-slug="@slug" method="post">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <label asp-for="Fecha" class="form-label">Fecha</label>
+                    <input asp-for="Fecha" type="date" class="form-control" value="@Model.Fecha.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <label asp-for="HoraInicio" class="form-label"></label>
+                        <input asp-for="HoraInicio" type="time" class="form-control" />
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label asp-for="HoraFin" class="form-label"></label>
+                        <input asp-for="HoraFin" type="time" class="form-control" />
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Motivo" class="form-label"></label>
+                    <input asp-for="Motivo" class="form-control" placeholder="Ej. Almuerzo" />
+                </div>
+                <button class="btn btn-primary"><i class="bi bi-slash-circle me-1"></i>Crear bloqueo</button>
+            </form>
+        </div></div>
+    </div>
+    <div class="col-lg-7">
+        <h2 class="h6 text-muted mb-2">Próximos bloqueos</h2>
+        @if (futuros.Count == 0)
+        {
+            <div class="alert alert-light border">No tienes bloqueos programados.</div>
+        }
+        else
+        {
+            <div class="d-flex flex-column gap-2">
+                @foreach (var b in futuros)
+                {
+                    <div class="turno-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-semibold">@b.FechaHoraInicio.ToString("ddd dd MMM") · @b.FechaHoraInicio.ToString("HH:mm")–@b.FechaHoraFin.ToString("HH:mm")</div>
+                            <div class="small text-muted">@(b.Motivo ?? "Sin motivo")</div>
+                        </div>
+                        <form asp-action="EliminarBloqueo" asp-route-slug="@slug" asp-route-id="@b.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

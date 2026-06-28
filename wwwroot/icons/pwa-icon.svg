@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Generador de Turnos">
+  <rect width="512" height="512" rx="96" fill="#0f766e"/>
+  <path d="M112 170c0-28 22-50 50-50h188c28 0 50 22 50 50v190c0 28-22 50-50 50H162c-28 0-50-22-50-50V170Z" fill="#fff"/>
+  <path d="M160 206h192M160 264h78M274 264h78M160 322h78M274 322h78" stroke="#0f766e" stroke-width="28" stroke-linecap="round"/>
+  <path d="M176 100v58M336 100v58" stroke="#f97316" stroke-width="34" stroke-linecap="round"/>
+  <circle cx="386" cy="126" r="46" fill="#2563eb"/>
+  <path d="m366 126 14 14 28-34" fill="none" stroke="#fff" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

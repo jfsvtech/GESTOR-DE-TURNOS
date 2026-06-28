@@ -1,0 +1,75 @@
+@model TenantFormVm
+@{
+    ViewData["Title"] = "Nuevo negocio";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <h1 class="h4 mb-3"><i class="bi bi-building-add me-1"></i>Nuevo negocio</h1>
+        <div class="card shadow-sm"><div class="card-body">
+            <form asp-action="Nuevo" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+                <h2 class="h6 text-muted">Datos del negocio</h2>
+                <div class="mb-3">
+                    <label asp-for="Nombre" class="form-label"></label>
+                    <input asp-for="Nombre" class="form-control" />
+                    <span asp-validation-for="Nombre" class="text-danger small"></span>
+                </div>
+                <div class="row">
+                    <div class="col-md-7 mb-3">
+                        <label asp-for="Slug" class="form-label"></label>
+                        <div class="input-group">
+                            <span class="input-group-text">/</span>
+                            <input asp-for="Slug" class="form-control" placeholder="barberia-centro" />
+                        </div>
+                        <span asp-validation-for="Slug" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-5 mb-3">
+                        <label asp-for="Plan" class="form-label"></label>
+                        <select asp-for="Plan" class="form-select">
+                            <option>Basico</option><option>Pro</option><option>Premium</option>
+                        </select>
+                    </div>
+                    <div class="col-md-5 mb-3">
+                        <label asp-for="MaxUsuarios" class="form-label"></label>
+                        <input asp-for="MaxUsuarios" class="form-control" type="number" min="1" />
+                        <span asp-validation-for="MaxUsuarios" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <h2 class="h6 text-muted mt-2">Cuenta del dueño</h2>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="DuenoNombre" class="form-label"></label>
+                        <input asp-for="DuenoNombre" class="form-control" />
+                        <span asp-validation-for="DuenoNombre" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="DuenoCedula" class="form-label"></label>
+                        <input asp-for="DuenoCedula" class="form-control" />
+                        <span asp-validation-for="DuenoCedula" class="text-danger small"></span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="DuenoEmail" class="form-label"></label>
+                        <input asp-for="DuenoEmail" type="email" class="form-control" placeholder="dueno@correo.com" />
+                        <span asp-validation-for="DuenoEmail" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="DuenoPassword" class="form-label"></label>
+                        <input asp-for="DuenoPassword" type="password" class="form-control" />
+                        <span asp-validation-for="DuenoPassword" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Crear negocio</button>
+                <a class="btn btn-link" asp-action="Index">Cancelar</a>
+            </form>
+        </div></div>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

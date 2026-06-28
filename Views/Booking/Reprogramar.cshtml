@@ -1,0 +1,76 @@
+@model ReservarViewModel
+@{
+    ViewData["Title"] = "Reprogramar turno";
+    var slug = ViewData["TenantSlug"] as string;
+    var turnoId = (int)ViewData["TurnoId"]!;
+    var servicio = Model.Servicios.FirstOrDefault();
+    var slotsUrl = Url.Action("Slots", "Booking", new { slug });
+}
+
+<h1 class="h3 mb-3"><i class="bi bi-arrow-repeat me-2"></i>Reprogramar turno</h1>
+<p class="text-muted">@Model.EmpleadoNombre · @servicio?.Nombre (@servicio?.DuracionMinutos min)</p>
+
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <label class="form-label">Nueva fecha</label>
+                <input id="fecha" type="date" class="form-control"
+                       value="@DateTime.Today.ToString("yyyy-MM-dd")" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h6 text-muted">Horarios disponibles</h2>
+                <div id="slots" class="d-flex flex-wrap gap-2 my-3"><div class="text-muted">Cargando…</div></div>
+
+                <form id="formReprog" asp-action="Reprogramar" asp-route-slug="@slug" asp-route-id="@turnoId" method="post" class="d-none">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="inicio" id="fInicio" />
+                    <div class="alert alert-primary d-flex justify-content-between align-items-center">
+                        <span>Nuevo horario: <strong id="resumen"></strong></span>
+                        <button type="submit" class="btn btn-success"><i class="bi bi-check2-circle me-1"></i>Confirmar cambio</button>
+                    </div>
+                </form>
+                <a class="btn btn-link" asp-action="MisTurnos" asp-route-slug="@slug">Volver</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const slotsUrl = '@slotsUrl';
+    const empleadoId = @Model.EmpleadoId;
+    const servicioId = @(servicio?.Id ?? 0);
+    const $fecha = document.getElementById('fecha');
+    const $slots = document.getElementById('slots');
+    const $form = document.getElementById('formReprog');
+    const $resumen = document.getElementById('resumen');
+
+    async function cargar() {
+        $form.classList.add('d-none');
+        $slots.innerHTML = '<div class="text-muted">Cargando…</div>';
+        const res = await fetch(`${slotsUrl}?empleadoId=${empleadoId}&servicioId=${servicioId}&fecha=${$fecha.value}`);
+        const data = await res.json();
+        if (!data.length) { $slots.innerHTML = '<div class="alert alert-light border mb-0">Sin horarios disponibles.</div>'; return; }
+        $slots.innerHTML = '';
+        data.forEach(s => {
+            const b = document.createElement('button');
+            b.type = 'button'; b.className = 'btn btn-outline-primary'; b.textContent = s.hora;
+            b.onclick = () => {
+                document.querySelectorAll('#slots .btn').forEach(x => x.classList.remove('active'));
+                b.classList.add('active');
+                document.getElementById('fInicio').value = s.inicio;
+                $resumen.textContent = `${$fecha.value} · ${s.hora}`;
+                $form.classList.remove('d-none');
+            };
+            $slots.appendChild(b);
+        });
+    }
+    $fecha.addEventListener('change', cargar);
+    cargar();
+</script>
+}

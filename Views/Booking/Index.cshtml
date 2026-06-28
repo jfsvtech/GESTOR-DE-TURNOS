@@ -1,0 +1,128 @@
+@model List<Servicio>
+@{
+    ViewData["Title"] = "Inicio";
+    var slug = ViewData["TenantSlug"] as string;
+    var tenantNombre = ViewData["TenantNombre"] as string;
+    var fotoNegocio = ViewData["TenantFotoUrl"] as string;
+    var usuarioRol = ViewData["UsuarioRol"] as string;
+    var galeria = ViewBag.Galeria as List<GeneradorTurnos.Models.GaleriaFoto> ?? new();
+    var iconos = new[] { "bi-scissors", "bi-brush", "bi-stars", "bi-gem", "bi-lightning-charge", "bi-droplet" };
+    var bg = string.IsNullOrEmpty(fotoNegocio)
+        ? "linear-gradient(115deg,rgba(5,12,22,.92) 0%,rgba(5,12,22,.78) 52%,rgba(15,23,42,.42) 100%),url('https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=1800&q=85') center/cover"
+        : $"linear-gradient(115deg,rgba(5,12,22,.92) 0%,rgba(5,12,22,.76) 52%,rgba(15,23,42,.38) 100%),url('{fotoNegocio}') center/cover";
+    var servicioPopular = Model.FirstOrDefault();
+}
+
+<section class="business-hero mb-4" style="background:@bg">
+    <div class="business-hero-content">
+        <span class="eyebrow"><i class="bi bi-geo-alt"></i> @tenantNombre</span>
+        <h1>ESTILO QUE TE DEFINE</h1>
+        <p>Cortes modernos, atencion profesional y reservas en tiempo real, sin esperas.</p>
+
+        <div class="hero-actions" id="acceso">
+            <a class="btn btn-gold btn-lg fw-bold" href="#servicios">
+                <i class="bi bi-calendar-plus me-1"></i>Reservar ahora
+            </a>
+            <a class="btn btn-outline-light btn-lg" href="#servicios">
+                <i class="bi bi-grid me-1"></i>Ver servicios
+            </a>
+            @if (usuarioRol == "Cliente")
+            {
+                <a class="btn btn-dark btn-lg" asp-action="MisTurnos" asp-route-slug="@slug">
+                    <i class="bi bi-bookmark-check me-1"></i>Mis turnos
+                </a>
+            }
+            else if (usuarioRol == "Barbero" || usuarioRol == "Dueno")
+            {
+                <a class="btn btn-dark btn-lg" asp-controller="Barbero" asp-action="Agenda" asp-route-slug="@slug">
+                    <i class="bi bi-calendar-week me-1"></i>Mi agenda
+                </a>
+            }
+        </div>
+
+        <div class="hero-trust">
+            <span><i class="bi bi-check2-circle"></i> Profesionales verificados</span>
+            <span><i class="bi bi-clock-history"></i> Agenda en vivo</span>
+            <span><i class="bi bi-bell"></i> Confirmaciones al instante</span>
+        </div>
+
+        <div class="quick-path hero-steps" aria-label="Pasos para reservar">
+            <div class="quick-path-item"><i class="bi bi-search"></i><span>Elige servicio</span></div>
+            <div class="quick-path-item"><i class="bi bi-person-video3"></i><span>Profesional</span></div>
+            <div class="quick-path-item"><i class="bi bi-clock-history"></i><span>Confirma horario</span></div>
+            <div class="quick-path-item"><i class="bi bi-bell"></i><span>Notificacion</span></div>
+        </div>
+    </div>
+
+    <div class="business-hero-panel" aria-label="Experiencia premium">
+        <div class="premium-glass-card">
+            <span class="premium-kicker"><i class="bi bi-stars"></i> Experiencia premium</span>
+            <h2>Reserva en segundos</h2>
+            <p>Elige servicio, profesional y horario con disponibilidad real. Tu barbero recibe cada cambio al instante.</p>
+            <div class="premium-feature-list">
+                <span><i class="bi bi-person-check"></i> Acceso centralizado</span>
+                <span><i class="bi bi-calendar2-check"></i> Agenda en tiempo real</span>
+                <span><i class="bi bi-shield-check"></i> Cambios controlados</span>
+            </div>
+            @if (servicioPopular is not null)
+            {
+                <a class="popular-service-pill" asp-action="Servicio" asp-route-slug="@slug" asp-route-servicioId="@servicioPopular.Id">
+                    <span>Popular</span>
+                    <strong>@servicioPopular.Nombre</strong>
+                    <i class="bi bi-arrow-right"></i>
+                </a>
+            }
+        </div>
+    </div>
+</section>
+
+<div class="section-heading" id="servicios">
+    <div>
+        <h2 class="section-title">Servicios disponibles</h2>
+        <p class="page-sub">Precios claros, duracion visible y disponibilidad real.</p>
+    </div>
+    <a class="btn btn-outline-primary" asp-controller="Account" asp-action="Registro" asp-route-slug="@slug">
+        <i class="bi bi-person-plus me-1"></i>Crear cuenta
+    </a>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="alert alert-info border-0 shadow-sm">Este negocio aun no tiene servicios disponibles.</div>
+}
+else
+{
+    <div class="service-showcase">
+        @{ var i = 0; }
+        @foreach (var s in Model)
+        {
+            var ico = iconos[i++ % iconos.Length];
+            <a class="service-tile" asp-action="Servicio" asp-route-slug="@slug" asp-route-servicioId="@s.Id">
+                <span class="service-icon"><i class="bi @ico"></i></span>
+                <span class="service-copy">
+                    <strong>@s.Nombre</strong>
+                    <small>@s.DuracionMinutos min - $@s.Precio.ToString("#,##0")</small>
+                </span>
+                <i class="bi bi-arrow-right"></i>
+            </a>
+        }
+    </div>
+}
+
+@if (galeria.Count > 0)
+{
+    <div class="section-heading mt-5">
+        <div>
+            <h2 class="section-title">Trabajos recientes</h2>
+            <p class="page-sub">Resultados reales del equipo.</p>
+        </div>
+    </div>
+    <div class="gallery-grid">
+        @foreach (var g in galeria)
+        {
+            <a href="@g.FotoUrl" target="_blank" class="gallery-item">
+                <img src="@g.FotoUrl" alt="@(g.Descripcion ?? "Trabajo reciente")" loading="lazy" />
+            </a>
+        }
+    </div>
+}

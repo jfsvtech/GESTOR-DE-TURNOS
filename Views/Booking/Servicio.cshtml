@@ -1,0 +1,77 @@
+@model List<ProfesionalDeServicio>
+@{
+    var servicio = (Servicio)ViewBag.Servicio;
+    ViewData["Title"] = servicio.Nombre;
+    var slug = ViewData["TenantSlug"] as string;
+    string Ini(string n) => string.Concat(n.Trim().Split(' ').Take(2).Select(p => p[0])).ToUpper();
+}
+
+<nav aria-label="breadcrumb" class="small">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="Index" asp-route-slug="@slug">Servicios</a></li>
+        <li class="breadcrumb-item active">@servicio.Nombre</li>
+    </ol>
+</nav>
+
+<div class="mb-4">
+    <h1 class="section-title mb-1">@servicio.Nombre</h1>
+    <p class="page-sub">Elige el profesional con quien quieres tu turno.</p>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="alert alert-info border-0 shadow-sm">
+        Por ahora ningún profesional presta este servicio.
+        <a asp-action="Index" asp-route-slug="@slug">Ver otros servicios</a>.
+    </div>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+        @foreach (var p in Model)
+        {
+            string? proxTexto = null;
+            string? proxFecha = null;
+            if (p.ProximoDisponible is { } pd)
+            {
+                proxFecha = pd.ToString("yyyy-MM-dd");
+                var dia = pd.Date == DateTime.Today ? "hoy"
+                    : pd.Date == DateTime.Today.AddDays(1) ? "mañana"
+                    : pd.ToString("ddd dd MMM");
+                proxTexto = $"{dia} · {pd:HH:mm}";
+            }
+            <div class="col">
+                <div class="card hover-lift h-100">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        @if (!string.IsNullOrEmpty(p.FotoUrl))
+                        {
+                            <img src="@p.FotoUrl" alt="@p.Nombre" class="pro-photo" />
+                        }
+                        else
+                        {
+                            <span class="avatar">@Ini(p.Nombre)</span>
+                        }
+                        <div class="flex-grow-1">
+                            <h5 class="mb-1">@p.Nombre</h5>
+                            <div class="small text-muted"><i class="bi bi-clock me-1"></i>@p.DuracionMinutos min · <span class="fw-semibold text-dark">$@p.Precio.ToString("#,##0")</span></div>
+                            @if (proxTexto != null)
+                            {
+                                <span class="chip mt-2"><i class="bi bi-lightning-charge-fill"></i> Próximo: @proxTexto</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-light text-muted mt-2">Sin cupos próximos</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-0 pt-0 px-3 pb-3">
+                        <a class="btn btn-primary w-100" asp-action="Reservar" asp-route-slug="@slug"
+                           asp-route-empleadoId="@p.EmpleadoId" asp-route-servicioId="@servicio.Id" asp-route-fecha="@proxFecha">
+                            @(proxTexto != null ? "Reservar" : "Ver disponibilidad") <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

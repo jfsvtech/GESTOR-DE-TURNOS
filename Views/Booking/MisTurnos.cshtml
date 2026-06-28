@@ -1,0 +1,48 @@
+@model List<TurnoDetalle>
+@{
+    ViewData["Title"] = "Mis turnos";
+    var slug = ViewData["TenantSlug"] as string;
+    var ahora = DateTime.Now;
+    var proximos = Model.Where(t => t.FechaHoraInicio >= ahora && t.Estado != EstadoTurno.Cancelado).OrderBy(t => t.FechaHoraInicio).ToList();
+    var pasados = Model.Where(t => !(t.FechaHoraInicio >= ahora && t.Estado != EstadoTurno.Cancelado)).ToList();
+}
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <div>
+        <h1 class="section-title mb-0">Mis turnos</h1>
+        <p class="page-sub mb-0">Gestiona tus reservas.</p>
+    </div>
+    <a class="btn btn-primary" asp-action="Index" asp-route-slug="@slug"><i class="bi bi-plus-lg me-1"></i>Nuevo turno</a>
+</div>
+
+@if (Model.Count == 0)
+{
+    <div class="card"><div class="card-body text-center py-5">
+        <div class="display-5 text-muted mb-2"><i class="bi bi-calendar-x"></i></div>
+        <p class="text-muted">Todavía no tienes turnos. ¡Reserva el primero!</p>
+        <a class="btn btn-primary" asp-action="Index" asp-route-slug="@slug">Reservar ahora</a>
+    </div></div>
+}
+else
+{
+    @if (proximos.Any())
+    {
+        <h2 class="h6 text-muted mb-2">PRÓXIMOS</h2>
+        <div class="d-flex flex-column gap-2 mb-4">
+            @foreach (var t in proximos)
+            {
+                <partial name="_TurnoClienteItem" model="t" />
+            }
+        </div>
+    }
+    @if (pasados.Any())
+    {
+        <h2 class="h6 text-muted mb-2">HISTORIAL</h2>
+        <div class="d-flex flex-column gap-2">
+            @foreach (var t in pasados)
+            {
+                <partial name="_TurnoClienteItem" model="t" />
+            }
+        </div>
+    }
+}

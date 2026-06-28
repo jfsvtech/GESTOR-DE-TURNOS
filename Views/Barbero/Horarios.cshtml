@@ -1,0 +1,38 @@
+@model List<HorarioTrabajo>
+@{
+    ViewData["Title"] = "Mis horarios";
+    var slug = ViewData["TenantSlug"] as string;
+    var dias = (string[])ViewBag.Dias;
+    var porDia = Model.GroupBy(h => h.DiaSemana).ToDictionary(g => g.Key, g => g.First());
+}
+
+<h1 class="section-title mb-1">Mis horarios de trabajo</h1>
+<p class="page-sub mb-4">Define tu franja horaria por día. Deja vacío los días que no trabajas.</p>
+
+<div class="card"><div class="card-body">
+    <form asp-action="Horarios" asp-route-slug="@slug" method="post">
+        @Html.AntiForgeryToken()
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead class="table-light"><tr><th>Día</th><th>Hora inicio</th><th>Hora fin</th></tr></thead>
+                <tbody>
+                    @for (int d = 0; d < 7; d++)
+                    {
+                        var tiene = porDia.TryGetValue(d, out var h);
+                        <tr>
+                            <td class="fw-semibold">@dias[d]</td>
+                            <td>
+                                <input type="hidden" name="dia" value="@d" />
+                                <input type="time" name="inicio" class="form-control" value="@(tiene ? h!.HoraInicio.ToString("HH\\:mm") : "")" />
+                            </td>
+                            <td>
+                                <input type="time" name="fin" class="form-control" value="@(tiene ? h!.HoraFin.ToString("HH\\:mm") : "")" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar horarios</button>
+    </form>
+</div></div>

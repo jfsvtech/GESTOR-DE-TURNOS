@@ -1,0 +1,63 @@
+@model LoginEmailVm
+@{
+    ViewData["Title"] = "Acceso";
+    Layout = "_AuthLayout";
+    var slug = ViewData["TenantSlug"] as string;
+    var nombre = ViewData["TenantNombre"] as string;
+    var foto = ViewData["TenantFotoUrl"] as string;
+    var bg = string.IsNullOrEmpty(foto)
+        ? "linear-gradient(135deg,#0f766e,#111827)"
+        : $"linear-gradient(135deg,rgba(15,118,110,.84),rgba(17,24,39,.76)),url('{foto}') center/cover";
+}
+
+<div class="login-experience">
+    <section class="login-brand" style="background:@bg">
+        <span class="eyebrow"><i class="bi bi-calendar2-check"></i> @nombre</span>
+        <h1>Un solo acceso para toda la operación.</h1>
+        <div class="login-role-grid">
+            <span><i class="bi bi-person-heart"></i>Cliente</span>
+            <span><i class="bi bi-scissors"></i>Trabajador</span>
+            <span><i class="bi bi-briefcase"></i>Dueño</span>
+            <span><i class="bi bi-shield-lock"></i>Superadmin</span>
+        </div>
+    </section>
+
+    <section class="login-panel">
+        <div class="auth-card">
+            <a class="small text-muted d-inline-flex align-items-center gap-1 mb-3" asp-controller="Booking" asp-action="Index" asp-route-slug="@slug">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+            <h2 class="h3 fw-bold mb-1">Entrar con correo</h2>
+            <p class="page-sub mb-4">El perfil se detecta automáticamente después de iniciar sesión.</p>
+
+            <form asp-action="Login" asp-route-slug="@slug" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="ReturnUrl" />
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Email" class="form-label"></label>
+                    <div class="input-icon"><i class="bi bi-envelope"></i>
+                        <input asp-for="Email" class="form-control form-control-lg" autofocus placeholder="correo@ejemplo.com" />
+                    </div>
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+                <div class="mb-4">
+                    <label asp-for="Password" class="form-label"></label>
+                    <div class="input-icon"><i class="bi bi-lock"></i>
+                        <input asp-for="Password" class="form-control form-control-lg" />
+                    </div>
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg w-100">Entrar</button>
+            </form>
+
+            <div class="login-register">
+                <span>¿Primera vez como cliente?</span>
+                <a asp-action="Registro" asp-route-slug="@slug" class="fw-semibold">Crear cuenta</a>
+            </div>
+        </div>
+    </section>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

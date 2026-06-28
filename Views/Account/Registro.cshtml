@@ -1,0 +1,71 @@
+@model RegistroClienteVm
+@{
+    ViewData["Title"] = "Crear cuenta";
+    Layout = "_AuthLayout";
+    var slug = ViewData["TenantSlug"] as string;
+    var nombre = ViewData["TenantNombre"] as string;
+}
+
+<div class="auth-wrap">
+    <div class="auth-side">
+        <div>
+            <span class="chip bg-white mb-3" style="color:#6d28d9">@nombre</span>
+            <h1 class="display-6 fw-bold">Crea tu cuenta</h1>
+            <p class="fs-5 opacity-75 mt-2">Es gratis y toma 30 segundos.</p>
+            <div class="feature"><i class="bi bi-envelope-check"></i><div><strong>Verificación por correo</strong><div class="opacity-75 small">Tu cuenta queda segura.</div></div></div>
+            <div class="feature"><i class="bi bi-calendar2-check"></i><div><strong>Reserva cuando quieras</strong></div></div>
+        </div>
+    </div>
+    <div class="auth-form">
+        <div class="auth-card">
+            <h2 class="h3 fw-bold mb-1">Regístrate</h2>
+            <p class="page-sub mb-4">Crea tu cuenta de cliente.</p>
+
+            <form asp-action="Registro" asp-route-slug="@slug" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="ReturnUrl" />
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Nombre" class="form-label"></label>
+                    <div class="input-icon"><i class="bi bi-person"></i>
+                        <input asp-for="Nombre" class="form-control form-control-lg" autofocus />
+                    </div>
+                    <span asp-validation-for="Nombre" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Email" class="form-label"></label>
+                    <div class="input-icon"><i class="bi bi-envelope"></i>
+                        <input asp-for="Email" class="form-control form-control-lg" placeholder="tucorreo@ejemplo.com" />
+                    </div>
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Telefono" class="form-label"></label>
+                    <div class="input-icon"><i class="bi bi-telephone"></i>
+                        <input asp-for="Telefono" class="form-control form-control-lg" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-6 mb-3">
+                        <label asp-for="Password" class="form-label"></label>
+                        <input asp-for="Password" class="form-control" />
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+                    <div class="col-sm-6 mb-4">
+                        <label asp-for="ConfirmPassword" class="form-label"></label>
+                        <input asp-for="ConfirmPassword" class="form-control" />
+                        <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg w-100">Crear cuenta</button>
+            </form>
+
+            <p class="text-center mt-4 mb-0">¿Ya tienes cuenta?
+                <a asp-action="Login" asp-route-slug="@slug" class="fw-semibold">Inicia sesión</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

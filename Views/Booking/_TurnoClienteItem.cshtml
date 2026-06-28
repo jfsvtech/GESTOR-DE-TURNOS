@@ -1,0 +1,37 @@
+@model TurnoDetalle
+@{
+    var slug = ViewData["TenantSlug"] as string;
+    var modificable = Model.FechaHoraInicio > DateTime.Now
+        && Model.Estado != EstadoTurno.Completado && Model.Estado != EstadoTurno.Cancelado;
+}
+<div class="turno-item">
+    <div class="row align-items-center g-2">
+        <div class="col-auto text-center" style="min-width:64px">
+            <div class="turno-time">@Model.FechaHoraInicio.ToString("HH:mm")</div>
+            <div class="small text-muted">@Model.FechaHoraInicio.ToString("dd MMM")</div>
+        </div>
+        <div class="col">
+            <div class="fw-semibold">@Model.ServicioNombre
+                <span class="badge @Model.Estado.Badge() ms-1">@Model.Estado.Display()</span>
+            </div>
+            <div class="small text-muted">
+                <i class="bi bi-person me-1"></i>@Model.EmpleadoNombre ·
+                <i class="bi bi-cash me-1"></i>$@Model.Precio.ToString("#,##0")
+                <span class="text-muted">· @Model.FechaHoraInicio.ToString("dddd dd MMM, yyyy")</span>
+            </div>
+        </div>
+        <div class="col-auto">
+            @if (modificable)
+            {
+                <a class="btn btn-sm btn-outline-primary" asp-action="Reprogramar" asp-route-slug="@slug" asp-route-id="@Model.Id" title="Reprogramar">
+                    <i class="bi bi-arrow-repeat"></i>
+                </a>
+                <form asp-action="Cancelar" asp-route-slug="@slug" asp-route-id="@Model.Id" method="post" class="d-inline"
+                      onsubmit="return confirm('¿Cancelar este turno?');">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-sm btn-outline-danger" title="Cancelar"><i class="bi bi-x-lg"></i></button>
+                </form>
+            }
+        </div>
+    </div>
+</div>

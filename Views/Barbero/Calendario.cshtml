@@ -1,0 +1,62 @@
+@{
+    ViewData["Title"] = "Calendario";
+    var slug = ViewData["TenantSlug"] as string;
+    var eventosUrl = Url.Action("Eventos", "Barbero", new { slug });
+}
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+        <h1 class="section-title mb-0">Calendario</h1>
+        <p class="page-sub mb-0">Vista por día, semana o mes. Haz clic en un turno para ver el detalle.</p>
+    </div>
+    <a class="btn btn-outline-primary" asp-action="Agenda" asp-route-slug="@slug"><i class="bi bi-list-ul me-1"></i>Vista lista</a>
+</div>
+
+<div class="card"><div class="card-body">
+    <div id="calendar"></div>
+</div></div>
+
+<!-- Modal detalle -->
+<div class="modal fade" id="evModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title" id="evTitulo">Turno</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body" id="evCuerpo"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var modal = new bootstrap.Modal(document.getElementById('evModal'));
+        var cal = new FullCalendar.Calendar(document.getElementById('calendar'), {
+            initialView: 'timeGridWeek',
+            locale: 'es',
+            firstDay: 1,
+            nowIndicator: true,
+            slotMinTime: '06:00:00',
+            slotMaxTime: '22:00:00',
+            height: 'auto',
+            headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
+            buttonText: { today: 'Hoy', month: 'Mes', week: 'Semana', day: 'Día' },
+            events: '@eventosUrl',
+            eventClick: function (info) {
+                info.jsEvent.preventDefault();
+                var p = info.event.extendedProps;
+                document.getElementById('evTitulo').textContent = p.servicio;
+                document.getElementById('evCuerpo').innerHTML =
+                    '<p class="mb-1"><strong>Cliente:</strong> ' + p.cliente + '</p>' +
+                    '<p class="mb-1"><strong>Teléfono:</strong> ' + p.telefono + '</p>' +
+                    '<p class="mb-1"><strong>Inicio:</strong> ' + info.event.start.toLocaleString('es-CO') + '</p>' +
+                    '<p class="mb-1"><strong>Estado:</strong> ' + p.estado + '</p>' +
+                    '<p class="mb-0"><strong>Precio:</strong> $' + Number(p.precio).toLocaleString('es-CO') + '</p>';
+                modal.show();
+            }
+        });
+        cal.render();
+    });
+</script>
+}

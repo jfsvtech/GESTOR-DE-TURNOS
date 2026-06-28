@@ -1,0 +1,33 @@
+@model LoginEmailVm
+@{
+    ViewData["Title"] = "Acceso administrador";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm mt-4">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-3"><i class="bi bi-shield-lock me-1"></i>Administrador SaaS</h1>
+                <form asp-action="Login" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="ReturnUrl" />
+                    <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label"></label>
+                        <input asp-for="Email" class="form-control" autofocus placeholder="admin@saas.com" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label"></label>
+                        <input asp-for="Password" class="form-control" />
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+                    <button class="btn btn-dark w-100">Entrar</button>
+                </form>
+                <a class="btn btn-link mt-2" href="/">Volver al inicio</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

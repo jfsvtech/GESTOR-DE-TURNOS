@@ -1,0 +1,91 @@
+@model List<Servicio>
+@{
+    ViewData["Title"] = "Servicios";
+    var slug = ViewData["TenantSlug"] as string;
+    var solicitudes = ViewBag.Solicitudes as List<ServicioSolicitudDetalle> ?? new();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0"><i class="bi bi-scissors me-2"></i>Servicios</h1>
+    <a class="btn btn-primary" asp-action="ServicioNuevo" asp-route-slug="@slug"><i class="bi bi-plus-lg me-1"></i>Nuevo servicio</a>
+</div>
+
+@if (solicitudes.Any())
+{
+    <div class="card mb-3 border-0 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div>
+                    <h2 class="h5 mb-0">Cambios pendientes de aprobacion</h2>
+                    <p class="page-sub mb-0">Los trabajadores no cambian precios o servicios sin tu aprobacion.</p>
+                </div>
+                <span class="chip">@solicitudes.Count pendiente(s)</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr><th>Trabajador</th><th>Servicio</th><th>Cambio solicitado</th><th class="text-end">Decision</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in solicitudes)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@s.EmpleadoNombre</td>
+                                <td>@s.ServicioNombre</td>
+                                <td>
+                                    @(s.Ofrecido ? "Ofrecer" : "Dejar de ofrecer")
+                                    @if (s.PrecioOverride.HasValue) { <span> - $@s.PrecioOverride.Value.ToString("#,##0")</span> }
+                                    @if (s.DuracionOverride.HasValue) { <span> - @s.DuracionOverride min</span> }
+                                </td>
+                                <td class="text-end">
+                                    <form asp-action="AprobarSolicitudServicio" asp-route-slug="@slug" asp-route-id="@s.Id" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button class="btn btn-sm btn-success"><i class="bi bi-check-lg"></i> Aprobar</button>
+                                    </form>
+                                    <form asp-action="RechazarSolicitudServicio" asp-route-slug="@slug" asp-route-id="@s.Id" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-x-lg"></i> Rechazar</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@if (Model.Count == 0)
+{
+    <div class="alert alert-info">Aún no hay servicios. Crea el primero.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table align-middle bg-white shadow-sm">
+            <thead class="table-light">
+                <tr><th>Servicio</th><th>Duración</th><th>Precio</th><th>Estado</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@s.Nombre</td>
+                        <td>@s.DuracionMinutos min</td>
+                        <td>$@s.Precio.ToString("#,##0")</td>
+                        <td>
+                            @if (s.Activo) { <span class="badge bg-success">Activo</span> }
+                            else { <span class="badge bg-secondary">Inactivo</span> }
+                        </td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-secondary" asp-action="ServicioEditar" asp-route-slug="@slug" asp-route-id="@s.Id">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

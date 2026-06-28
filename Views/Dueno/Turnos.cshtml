@@ -1,0 +1,65 @@
+@model List<TurnoDetalle>
+@{
+    ViewData["Title"] = "Turnos";
+    var slug = ViewData["TenantSlug"] as string;
+    var desde = (DateTime)ViewData["Desde"]!;
+    var hasta = (DateTime)ViewData["Hasta"]!;
+}
+
+<h1 class="h3 mb-3"><i class="bi bi-calendar3 me-2"></i>Turnos</h1>
+
+<form method="get" asp-action="Turnos" asp-route-slug="@slug" class="row g-2 align-items-end mb-3">
+    <div class="col-auto">
+        <label class="form-label small">Desde</label>
+        <input type="date" name="desde" value="@desde.ToString("yyyy-MM-dd")" class="form-control" />
+    </div>
+    <div class="col-auto">
+        <label class="form-label small">Hasta</label>
+        <input type="date" name="hasta" value="@hasta.ToString("yyyy-MM-dd")" class="form-control" />
+    </div>
+    <div class="col-auto"><button class="btn btn-primary">Filtrar</button></div>
+    <div class="col-auto">
+        <a class="btn btn-success" asp-action="Exportar" asp-route-slug="@slug"
+           asp-route-desde="@desde.ToString("yyyy-MM-dd")" asp-route-hasta="@hasta.ToString("yyyy-MM-dd")">
+            <i class="bi bi-file-earmark-excel me-1"></i>Exportar Excel
+        </a>
+    </div>
+</form>
+
+@if (Model.Count == 0)
+{
+    <div class="alert alert-info">No hay turnos en el rango seleccionado.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped align-middle bg-white shadow-sm">
+            <thead class="table-dark">
+                <tr>
+                    <th>Fecha</th><th>Cliente</th><th>Teléfono</th><th>Profesional</th>
+                    <th>Servicio</th><th>Estado</th><th class="text-end">Precio</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var t in Model)
+                {
+                    <tr>
+                        <td>@t.FechaHoraInicio.ToString("dd/MM/yy HH:mm")</td>
+                        <td>@t.ClienteNombre <small class="text-muted">(@t.ClienteCedula)</small></td>
+                        <td>@(t.ClienteTelefono ?? "—")</td>
+                        <td>@t.EmpleadoNombre</td>
+                        <td>@t.ServicioNombre</td>
+                        <td><span class="badge @t.Estado.Badge()">@t.Estado.Display()</span></td>
+                        <td class="text-end">$@t.Precio.ToString("#,##0")</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr class="fw-bold">
+                    <td colspan="6" class="text-end">Total ingresos (completados):</td>
+                    <td class="text-end">$@Model.Where(x => x.Estado == EstadoTurno.Completado).Sum(x => x.Precio).ToString("#,##0")</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+}

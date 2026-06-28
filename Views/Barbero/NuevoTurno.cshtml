@@ -1,0 +1,68 @@
+@model ReservaManualVm
+@{
+    ViewData["Title"] = "Nuevo turno";
+    var slug = ViewData["TenantSlug"] as string;
+    var servicios = ViewBag.Servicios as List<Servicio> ?? new List<Servicio>();
+}
+
+<h1 class="section-title mb-1">Nuevo turno (manual)</h1>
+<p class="page-sub mb-4">Agenda a un cliente walk-in. Puedes usar horarios fuera de tu disponibilidad publicada.</p>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card"><div class="card-body">
+            <form asp-action="NuevoTurno" asp-route-slug="@slug" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+                <div class="mb-3">
+                    <label class="form-label">Servicio</label>
+                    <select asp-for="ServicioId" class="form-select">
+                        @foreach (var s in servicios)
+                        {
+                            <option value="@s.Id">@s.Nombre — @s.DuracionMinutos min — $@s.Precio.ToString("#,##0")</option>
+                        }
+                    </select>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Fecha" class="form-label">Fecha</label>
+                        <input asp-for="Fecha" type="date" class="form-control" value="@Model.Fecha.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Hora" class="form-label"></label>
+                        <input asp-for="Hora" type="time" class="form-control" />
+                    </div>
+                </div>
+                <hr />
+                <h2 class="h6 text-muted">Datos del cliente</h2>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="ClienteCedula" class="form-label"></label>
+                        <input asp-for="ClienteCedula" class="form-control" />
+                        <span asp-validation-for="ClienteCedula" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="ClienteNombre" class="form-label"></label>
+                        <input asp-for="ClienteNombre" class="form-control" />
+                        <span asp-validation-for="ClienteNombre" class="text-danger small"></span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="ClienteTelefono" class="form-label"></label>
+                        <input asp-for="ClienteTelefono" class="form-control" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Notas" class="form-label"></label>
+                        <input asp-for="Notas" class="form-control" />
+                    </div>
+                </div>
+                <button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Agendar turno</button>
+                <a class="btn btn-link" asp-action="Agenda" asp-route-slug="@slug">Cancelar</a>
+            </form>
+        </div></div>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }
