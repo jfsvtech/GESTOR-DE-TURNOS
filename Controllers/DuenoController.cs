@@ -56,6 +56,21 @@ public class DuenoController : TenantBaseController
         var horasOcupadas = turnosRango
             .Where(t => t.Estado != EstadoTurno.Cancelado && t.Estado != EstadoTurno.NoShow)
             .Sum(t => (decimal)(t.FechaHoraFin - t.FechaHoraInicio).TotalHours);
+        var clientesAgrupados = turnosRango
+            .Where(t => !string.IsNullOrWhiteSpace(t.ClienteNombre))
+            .GroupBy(t => t.ClienteNombre)
+            .ToList();
+        var clientesRecurrentes = clientesAgrupados
+            .Select(g => new RankingItem
+            {
+                Etiqueta = g.Key,
+                Cantidad = g.Count(),
+                Valor = g.Where(x => x.Estado == EstadoTurno.Completado).Sum(x => x.Precio)
+            })
+            .Where(x => x.Cantidad > 1)
+            .OrderByDescending(x => x.Cantidad)
+            .Take(8).ToList();
+        var clientesUnicos = Math.Max(1, clientesAgrupados.Count);
 
         var vm = new DashboardDuenoVm
         {
@@ -74,10 +89,26 @@ public class DuenoController : TenantBaseController
                 Cantidad = b.Total,
                 Valor = b.Total == 0 ? 0 : Math.Round(b.Completados * 100m / b.Total, 0)
             }).ToList(),
-            ClientesRecurrentes = turnosRango
-                .GroupBy(t => t.ClienteNombre)
-                .Select(g => new RankingItem { Etiqueta = g.Key, Cantidad = g.Count(), Valor = g.Sum(x => x.Precio) })
-                .Where(x => x.Cantidad > 1)
+            ClientesRecurrentes = clientesRecurrentes,
+            TasaRecurrencia = Math.Round(clientesRecurrentes.Count * 100m / clientesUnicos, 0),
+            ClientesPorIngresos = clientesAgrupados
+                .Select(g => new RankingItem
+                {
+                    Etiqueta = g.Key,
+                    Cantidad = g.Count(x => x.Estado == EstadoTurno.Completado),
+                    Valor = g.Where(x => x.Estado == EstadoTurno.Completado).Sum(x => x.Precio)
+                })
+                .Where(x => x.Valor > 0)
+                .OrderByDescending(x => x.Valor)
+                .Take(8).ToList(),
+            ClientesConCancelaciones = clientesAgrupados
+                .Select(g => new RankingItem
+                {
+                    Etiqueta = g.Key,
+                    Cantidad = g.Count(x => x.Estado == EstadoTurno.Cancelado || x.Estado == EstadoTurno.NoShow),
+                    Valor = g.Count()
+                })
+                .Where(x => x.Cantidad > 0)
                 .OrderByDescending(x => x.Cantidad)
                 .Take(8).ToList(),
             CancelacionesPorDia = turnosRango

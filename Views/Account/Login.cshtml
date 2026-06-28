@@ -6,19 +6,22 @@
     var nombre = ViewData["TenantNombre"] as string;
     var foto = ViewData["TenantFotoUrl"] as string;
     var bg = string.IsNullOrEmpty(foto)
-        ? "linear-gradient(135deg,#0f766e,#111827)"
-        : $"linear-gradient(135deg,rgba(15,118,110,.84),rgba(17,24,39,.76)),url('{foto}') center/cover";
+        ? "linear-gradient(120deg,rgba(5,12,22,.9),rgba(15,118,110,.78)),url('https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=1600&q=85') center/cover"
+        : $"linear-gradient(120deg,rgba(5,12,22,.88),rgba(15,118,110,.72)),url('{foto}') center/cover";
 }
 
 <div class="login-experience">
     <section class="login-brand" style="background:@bg">
-        <span class="eyebrow"><i class="bi bi-calendar2-check"></i> @nombre</span>
-        <h1>Un solo acceso para toda la operación.</h1>
-        <div class="login-role-grid">
-            <span><i class="bi bi-person-heart"></i>Cliente</span>
-            <span><i class="bi bi-scissors"></i>Trabajador</span>
-            <span><i class="bi bi-briefcase"></i>Dueño</span>
-            <span><i class="bi bi-shield-lock"></i>Superadmin</span>
+        <div class="login-brand-content">
+            <span class="eyebrow"><i class="bi bi-calendar2-check"></i> @nombre</span>
+            <h1>Gestiona tu barberia sin perder turnos.</h1>
+            <p>Reservas en tiempo real, historial de clientes, ingresos por trabajador y control del negocio desde un solo acceso.</p>
+            <div class="login-value-grid">
+                <span><i class="bi bi-calendar2-check"></i><strong>Reservas</strong><small>Agenda siempre actualizada</small></span>
+                <span><i class="bi bi-person-vcard"></i><strong>Clientes</strong><small>Historial y recurrencia</small></span>
+                <span><i class="bi bi-cash-stack"></i><strong>Ingresos</strong><small>Ventas por barbero</small></span>
+                <span><i class="bi bi-bell"></i><strong>Alertas</strong><small>Cambios notificados</small></span>
+            </div>
         </div>
     </section>
 
@@ -28,7 +31,7 @@
                 <i class="bi bi-arrow-left"></i> Volver
             </a>
             <h2 class="h3 fw-bold mb-1">Entrar con correo</h2>
-            <p class="page-sub mb-4">El perfil se detecta automáticamente después de iniciar sesión.</p>
+            <p class="page-sub mb-4">El perfil se detecta automaticamente despues de iniciar sesion.</p>
 
             <form asp-action="Login" asp-route-slug="@slug" method="post">
                 @Html.AntiForgeryToken()
@@ -53,7 +56,7 @@
             </form>
 
             <div class="login-register">
-                <span>¿Primera vez como cliente?</span>
+                <span>Primera vez como cliente?</span>
                 <a asp-action="Registro" asp-route-slug="@slug" class="fw-semibold">Crear cuenta</a>
             </div>
         </div>

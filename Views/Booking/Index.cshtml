@@ -111,18 +111,21 @@ else
 
 @if (galeria.Count > 0)
 {
-    <div class="section-heading mt-5">
-        <div>
-            <h2 class="section-title">Trabajos recientes</h2>
-            <p class="page-sub">Resultados reales del equipo.</p>
+    <details class="gallery-collapse mt-4">
+        <summary>
+            <span>
+                <strong>Trabajos recientes</strong>
+                <small>Resultados reales del equipo</small>
+            </span>
+            <i class="bi bi-chevron-down"></i>
+        </summary>
+        <div class="gallery-grid mt-3">
+            @foreach (var g in galeria)
+            {
+                <a href="@g.FotoUrl" target="_blank" class="gallery-item">
+                    <img src="@g.FotoUrl" alt="@(g.Descripcion ?? "Trabajo reciente")" loading="lazy" />
+                </a>
+            }
         </div>
-    </div>
-    <div class="gallery-grid">
-        @foreach (var g in galeria)
-        {
-            <a href="@g.FotoUrl" target="_blank" class="gallery-item">
-                <img src="@g.FotoUrl" alt="@(g.Descripcion ?? "Trabajo reciente")" loading="lazy" />
-            </a>
-        }
-    </div>
+    </details>
 }

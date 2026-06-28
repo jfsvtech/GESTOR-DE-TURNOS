@@ -43,7 +43,6 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="nav">
-                <div class="sidebar-section-label d-none d-lg-flex">Menu principal</div>
                 <ul class="navbar-nav ms-auto align-items-lg-center gap-1">
                     @if (tenantSlug != null)
                     {
@@ -84,7 +83,6 @@
                         }
                         else
                         {
-                            <li class="nav-item"><a class="nav-link" asp-controller="Booking" asp-action="Index" asp-route-slug="@tenantSlug"><i class="bi bi-scissors me-1"></i>Reservar</a></li>
                             @if (usuarioRol == "Cliente")
                             {
                                 <li class="nav-item"><a class="nav-link" asp-controller="Booking" asp-action="MisTurnos" asp-route-slug="@tenantSlug"><i class="bi bi-bookmark-check me-1"></i>Mis turnos</a></li>
@@ -116,28 +114,13 @@
                         }
                         else
                         {
-                            <li class="nav-item ms-lg-2"><a class="btn btn-primary btn-sm" asp-controller="Account" asp-action="Login" asp-route-slug="@tenantSlug"><i class="bi bi-box-arrow-in-right me-1"></i>Ingresar</a></li>
+                            <li class="nav-item ms-lg-2"><a class="btn btn-primary btn-sm login-cta" asp-controller="Account" asp-action="Login" asp-route-slug="@tenantSlug"><i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesion</a></li>
                         }
                     }
                 </ul>
                 <button class="btn btn-sm btn-outline-primary ms-lg-2 theme-toggle-btn" type="button" data-theme-toggle title="Cambiar tema">
                     <i class="bi bi-moon-stars"></i>
-                    <span class="theme-toggle-label">Modo oscuro</span>
                 </button>
-                @if (tenantSlug != null)
-                {
-                    <div class="sidebar-footer-card d-none d-lg-grid">
-                        <div class="sidebar-footer-icon"><i class="bi bi-lightning-charge"></i></div>
-                        <div>
-                            <strong>Agenda inteligente</strong>
-                            <span>Reservas, clientes y equipo en un solo lugar.</span>
-                        </div>
-                        @if (usuarioNombre == null)
-                        {
-                            <a asp-controller="Account" asp-action="Login" asp-route-slug="@tenantSlug">Entrar con correo</a>
-                        }
-                    </div>
-                }
             </div>
         </div>
     </nav>

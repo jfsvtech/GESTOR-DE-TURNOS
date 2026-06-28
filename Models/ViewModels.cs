@@ -225,6 +225,9 @@ public class DashboardDuenoVm
     public List<ResumenBarbero> Barberos { get; set; } = new();
     public List<RankingItem> OcupacionPorBarbero { get; set; } = new();
     public List<RankingItem> ClientesRecurrentes { get; set; } = new();
+    public List<RankingItem> ClientesPorIngresos { get; set; } = new();
+    public List<RankingItem> ClientesConCancelaciones { get; set; } = new();
+    public decimal TasaRecurrencia { get; set; }
     public List<SerieFecha> CancelacionesPorDia { get; set; } = new();
     public List<SerieFecha> ProductividadPorSemana { get; set; } = new();
     public decimal HorasMuertasEstimadas { get; set; }
