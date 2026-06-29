@@ -48,7 +48,7 @@ public class AccountController : TenantBaseController
             Rol = Rol.Cliente,
             Nombre = vm.Nombre.Trim(),
             Email = vm.Email.Trim(),
-            Telefono = string.IsNullOrWhiteSpace(vm.Telefono) ? null : vm.Telefono.Trim(),
+            Telefono = vm.Telefono.Trim(),
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(vm.Password),
             Activo = true,
             EmailVerificado = false,

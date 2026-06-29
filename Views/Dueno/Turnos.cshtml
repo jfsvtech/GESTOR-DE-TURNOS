@@ -43,10 +43,22 @@ else
             <tbody>
                 @foreach (var t in Model)
                 {
+                    var whatsapp = PhoneHelper.WhatsAppUrl(t.ClienteTelefono);
                     <tr>
                         <td>@t.FechaHoraInicio.ToString("dd/MM/yy HH:mm")</td>
                         <td>@t.ClienteNombre <small class="text-muted">(@t.ClienteCedula)</small></td>
-                        <td>@(t.ClienteTelefono ?? "—")</td>
+                        <td>
+                            @if (whatsapp is not null)
+                            {
+                                <a href="@whatsapp" target="_blank" rel="noopener" class="link-success fw-semibold">
+                                    <i class="bi bi-whatsapp me-1"></i>@t.ClienteTelefono
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
                         <td>@t.EmpleadoNombre</td>
                         <td>@t.ServicioNombre</td>
                         <td><span class="badge @t.Estado.Badge()">@t.Estado.Display()</span></td>

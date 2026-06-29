@@ -210,7 +210,7 @@ public class SuperAdminController : Controller
             Nombre = vm.Nombre.Trim(),
             Cedula = string.IsNullOrWhiteSpace(vm.Cedula) ? null : vm.Cedula.Trim(),
             Email = vm.Email.Trim(),
-            Telefono = vm.Telefono,
+            Telefono = vm.Telefono.Trim(),
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(vm.Password),
             Activo = vm.Activo,
             Atiende = vm.Rol == Rol.Barbero,
@@ -301,7 +301,8 @@ public class SuperAdminController : Controller
         await _usuarios.CreateAsync(new Usuario
         {
             TenantId = tenantId, Rol = Rol.Dueno, Nombre = vm.DuenoNombre.Trim(), Cedula = vm.DuenoCedula.Trim(),
-            Email = vm.DuenoEmail.Trim(), PasswordHash = BCrypt.Net.BCrypt.HashPassword(vm.DuenoPassword), Activo = true,
+            Email = vm.DuenoEmail.Trim(), Telefono = vm.DuenoTelefono.Trim(),
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(vm.DuenoPassword), Activo = true,
             EmailVerificado = false, TokenVerificacion = token, TokenExpira = DateTime.Now.AddDays(7)
         });
 

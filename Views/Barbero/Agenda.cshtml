@@ -109,6 +109,7 @@ else
     <div class="d-flex flex-column gap-2">
         @foreach (var t in Model)
         {
+            var whatsapp = PhoneHelper.WhatsAppUrl(t.ClienteTelefono);
             <div class="turno-item">
                 <div class="row align-items-center g-2">
                     <div class="col-auto text-center" style="min-width:64px">
@@ -121,7 +122,17 @@ else
                         </div>
                         <div class="small text-muted">
                             <i class="bi bi-scissors me-1"></i>@t.ServicioNombre ·
-                            <i class="bi bi-telephone me-1"></i>@(t.ClienteTelefono ?? "—") ·
+                            @if (whatsapp is not null)
+                            {
+                                <a href="@whatsapp" target="_blank" rel="noopener" class="link-success fw-semibold">
+                                    <i class="bi bi-whatsapp me-1"></i>@t.ClienteTelefono
+                                </a>
+                            }
+                            else
+                            {
+                                <span><i class="bi bi-telephone me-1"></i>-</span>
+                            }
+                            ·
                             <span class="fw-semibold text-dark">$@t.Precio.ToString("#,##0")</span>
                         </div>
                         @if (!string.IsNullOrWhiteSpace(t.Notas))

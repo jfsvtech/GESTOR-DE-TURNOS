@@ -26,8 +26,9 @@ public class RegistroViewModel
     [Display(Name = "Cédula")]
     public string Cedula { get; set; } = "";
 
+    [Required(ErrorMessage = "Ingresa el telefono")]
     [Display(Name = "Teléfono")]
-    public string? Telefono { get; set; }
+    public string Telefono { get; set; } = "";
 
     [EmailAddress(ErrorMessage = "Correo no válido")]
     [Display(Name = "Correo (opcional)")]
@@ -56,8 +57,9 @@ public class RegistroClienteVm
     [Display(Name = "Correo electrónico")]
     public string Email { get; set; } = "";
 
+    [Required(ErrorMessage = "Ingresa el telefono")]
     [Display(Name = "Teléfono")]
-    public string? Telefono { get; set; }
+    public string Telefono { get; set; } = "";
 
     [Required(ErrorMessage = "Crea una contraseña")]
     [MinLength(6, ErrorMessage = "Mínimo 6 caracteres")]
@@ -112,7 +114,8 @@ public class ReservaManualVm
     [Display(Name = "Hora")] public string Hora { get; set; } = "10:00";
     [Required] [Display(Name = "Cédula del cliente")] public string ClienteCedula { get; set; } = "";
     [Required] [Display(Name = "Nombre del cliente")] public string ClienteNombre { get; set; } = "";
-    [Display(Name = "Teléfono")] public string? ClienteTelefono { get; set; }
+    [Required(ErrorMessage = "Ingresa el telefono del cliente")]
+    [Display(Name = "Teléfono")] public string ClienteTelefono { get; set; } = "";
     [Display(Name = "Notas")] public string? Notas { get; set; }
 }
 
@@ -153,8 +156,9 @@ public class BarberoFormVm
     public string Nombre { get; set; } = "";
     [Required] [Display(Name = "Cédula")]
     public string Cedula { get; set; } = "";
+    [Required(ErrorMessage = "Ingresa el telefono")]
     [Display(Name = "Teléfono")]
-    public string? Telefono { get; set; }
+    public string Telefono { get; set; } = "";
     [Display(Name = "Correo")]
     public string? Email { get; set; }
     [Display(Name = "Contraseña (dejar vacío para no cambiar)")]
@@ -186,6 +190,9 @@ public class TenantFormVm
     public string DuenoCedula { get; set; } = "";
     [Required] [EmailAddress] [Display(Name = "Correo del dueño")]
     public string DuenoEmail { get; set; } = "";
+    [Required(ErrorMessage = "Ingresa el telefono del dueno")]
+    [Display(Name = "Telefono del dueno")]
+    public string DuenoTelefono { get; set; } = "";
     [Required] [Display(Name = "Contraseña del dueño")]
     public string DuenoPassword { get; set; } = "";
 }
@@ -263,7 +270,7 @@ public class UsuarioInternoFormVm
     [Required] public string Nombre { get; set; } = "";
     public string? Cedula { get; set; }
     [Required, EmailAddress] public string Email { get; set; } = "";
-    public string? Telefono { get; set; }
+    [Required] public string Telefono { get; set; } = "";
     [Required] public Rol Rol { get; set; } = Rol.Barbero;
     public string? Password { get; set; }
     public bool Activo { get; set; } = true;

@@ -252,7 +252,7 @@ public class BarberoController : TenantBaseController
         }
 
         var cliente = await _usuarios.UpsertClienteAsync(TenantId, vm.ClienteCedula.Trim(), vm.ClienteNombre.Trim(),
-            string.IsNullOrWhiteSpace(vm.ClienteTelefono) ? null : vm.ClienteTelefono.Trim());
+            vm.ClienteTelefono.Trim());
 
         var inicio = vm.Fecha.Date + hora.ToTimeSpan();
         var res = await _turnoService.ReservarManualAsync(TenantId, CurrentUserId, cliente.Id, vm.ServicioId,

@@ -344,7 +344,7 @@ public class DuenoController : TenantBaseController
         ViewBag.FotoActual = u.FotoUrl;
         return View("ProfesionalForm", new BarberoFormVm
         {
-            Id = u.Id, Nombre = u.Nombre, Cedula = u.Cedula ?? "", Telefono = u.Telefono,
+            Id = u.Id, Nombre = u.Nombre, Cedula = u.Cedula ?? "", Telefono = u.Telefono ?? "",
             Email = u.Email, Activo = u.Activo,
             ComisionTipo = u.ComisionTipo, ComisionValor = u.ComisionValor,
             ServicioIds = await _servicios.GetServicioIdsByEmpleadoAsync(TenantId, id)
@@ -398,7 +398,7 @@ public class DuenoController : TenantBaseController
             empleadoId = await _usuarios.CreateAsync(new Usuario
             {
                 TenantId = TenantId, Rol = Rol.Barbero, Nombre = vm.Nombre.Trim(), Cedula = vm.Cedula.Trim(),
-                Telefono = vm.Telefono, Email = vm.Email!.Trim(), Activo = vm.Activo, Atiende = true,
+                Telefono = vm.Telefono.Trim(), Email = vm.Email!.Trim(), Activo = vm.Activo, Atiende = true,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(vm.Password!),
                 EmailVerificado = false, TokenVerificacion = token, TokenExpira = DateTime.Now.AddDays(7)
             });
@@ -408,7 +408,7 @@ public class DuenoController : TenantBaseController
         {
             var u = await _usuarios.GetByIdInTenantAsync(TenantId, vm.Id);
             if (u is null) return NotFound();
-            u.Nombre = vm.Nombre.Trim(); u.Telefono = vm.Telefono; u.Email = vm.Email; u.Activo = vm.Activo;
+            u.Nombre = vm.Nombre.Trim(); u.Telefono = vm.Telefono.Trim(); u.Email = vm.Email; u.Activo = vm.Activo;
             await _usuarios.UpdateAsync(u);
             if (!string.IsNullOrWhiteSpace(vm.Password))
                 await _usuarios.UpdatePasswordAsync(u.Id, BCrypt.Net.BCrypt.HashPassword(vm.Password));

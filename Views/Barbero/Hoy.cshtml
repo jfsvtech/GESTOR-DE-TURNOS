@@ -24,14 +24,19 @@
 else
 {
     var t = Model.Proximo;
+    var proximoWhatsApp = PhoneHelper.WhatsAppUrl(t.ClienteTelefono);
     <div class="next-appointment mb-3">
         <div>
             <span class="small text-muted">Próximo cliente</span>
             <h2>@t.ClienteNombre</h2>
             <p><i class="bi bi-clock"></i> @t.FechaHoraInicio.ToString("HH:mm") - @t.ServicioNombre - $@t.Precio.ToString("#,##0")</p>
-            @if (!string.IsNullOrWhiteSpace(t.ClienteTelefono))
+            @if (proximoWhatsApp is not null)
             {
-                <p><i class="bi bi-telephone"></i> @t.ClienteTelefono</p>
+                <p>
+                    <a href="@proximoWhatsApp" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-whatsapp"></i> @t.ClienteTelefono
+                    </a>
+                </p>
             }
             @if (!string.IsNullOrWhiteSpace(t.Notas))
             {
@@ -59,8 +64,18 @@ else
                 <div class="d-flex flex-column gap-2">
                     @foreach (var item in Model.Agenda)
                     {
+                        var itemWhatsApp = PhoneHelper.WhatsAppUrl(item.ClienteTelefono);
                         <div class="turno-item d-flex justify-content-between align-items-center">
-                            <div><strong>@item.FechaHoraInicio.ToString("HH:mm")</strong> @item.ClienteNombre<br><span class="small text-muted">@item.ServicioNombre</span></div>
+                            <div>
+                                <strong>@item.FechaHoraInicio.ToString("HH:mm")</strong> @item.ClienteNombre
+                                @if (itemWhatsApp is not null)
+                                {
+                                    <a href="@itemWhatsApp" target="_blank" rel="noopener" class="ms-2 link-success fw-semibold">
+                                        <i class="bi bi-whatsapp"></i>
+                                    </a>
+                                }
+                                <br><span class="small text-muted">@item.ServicioNombre</span>
+                            </div>
                             <span class="badge @item.Estado.Badge()">@item.Estado.Display()</span>
                         </div>
                     }

@@ -41,10 +41,22 @@ else
             <tbody>
                 @foreach (var u in Model)
                 {
+                    var whatsapp = PhoneHelper.WhatsAppUrl(u.Telefono);
                     <tr>
                         <td class="fw-semibold">@u.Nombre</td>
                         <td>@u.Cedula</td>
-                        <td>@(u.Telefono ?? "—")</td>
+                        <td>
+                            @if (whatsapp is not null)
+                            {
+                                <a href="@whatsapp" target="_blank" rel="noopener" class="link-success fw-semibold">
+                                    <i class="bi bi-whatsapp me-1"></i>@u.Telefono
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
                         <td>
                             @if (u.Activo) { <span class="badge bg-success">Activo</span> }
                             else { <span class="badge bg-secondary">Inactivo</span> }
