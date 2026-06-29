@@ -1,4 +1,18 @@
 (() => {
+  // --- Auto-sanado: elimina cualquier service worker viejo y su caché ---
+  // (un SW previo dejaba la web "vieja" hasta borrar datos del sitio).
+  try {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations()
+        .then(regs => regs.forEach(reg => reg.unregister().catch(() => {})))
+        .catch(() => {});
+    }
+    if ("caches" in window) {
+      caches.keys().then(keys => keys.forEach(k => caches.delete(k))).catch(() => {});
+    }
+  } catch (_) {}
+
+  // --- Tema claro / oscuro ---
   const storedTheme = localStorage.getItem("turnos-theme");
   if (storedTheme === "dark" || (!storedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
     document.documentElement.dataset.theme = "dark";
@@ -16,13 +30,14 @@
   };
   syncThemeButton();
 
-  document.querySelector("[data-theme-toggle]")?.addEventListener("click", () => {
+  document.querySelectorAll("[data-theme-toggle]").forEach(btn => btn.addEventListener("click", () => {
     const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = next;
     localStorage.setItem("turnos-theme", next);
     syncThemeButton();
-  });
+  }));
 
+  // --- Marcar enlace activo en la navegación ---
   const currentPath = location.pathname.replace(/\/$/, "").toLowerCase();
   document.querySelectorAll(".app-nav a[href], .mobile-tabbar a[href]").forEach(link => {
     const linkPath = new URL(link.getAttribute("href"), location.origin).pathname.replace(/\/$/, "").toLowerCase();
@@ -32,25 +47,14 @@
     }
   });
 
-  const isSecure = window.isSecureContext || location.hostname === "localhost";
-
-  if ("serviceWorker" in navigator && isSecure) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/service-worker.js").catch(() => {
-        // La app sigue funcionando aunque el navegador bloquee el SW.
-      });
-    });
-  }
-
+  // --- Botón de instalar PWA (si el navegador lo ofrece) ---
   let deferredInstallPrompt = null;
   const installButton = document.querySelector("[data-pwa-install]");
-
   window.addEventListener("beforeinstallprompt", event => {
     event.preventDefault();
     deferredInstallPrompt = event;
     if (installButton) installButton.hidden = false;
   });
-
   installButton?.addEventListener("click", async () => {
     if (!deferredInstallPrompt) return;
     deferredInstallPrompt.prompt();
@@ -58,15 +62,14 @@
     deferredInstallPrompt = null;
     installButton.hidden = true;
   });
+  window.addEventListener("appinstalled", () => { if (installButton) installButton.hidden = true; });
 
-  window.addEventListener("appinstalled", () => {
-    if (installButton) installButton.hidden = true;
-  });
-
+  // --- Loader de navegación (siempre se oculta, nunca tapa la página) ---
   const loader = document.querySelector("[data-app-loader]");
-  const showLoader = () => loader?.classList.add("is-active");
   const hideLoader = () => loader?.classList.remove("is-active");
+  hideLoader();
   window.addEventListener("pageshow", hideLoader);
+  window.addEventListener("load", hideLoader);
   document.addEventListener("click", event => {
     const link = event.target.closest("a[href]");
     if (!link) return;
@@ -75,10 +78,12 @@
     const isDownload = link.hasAttribute("download");
     const opensNewTab = link.target && link.target !== "_self";
     if (isSameApp && !isDownload && !opensNewTab && `${url.pathname}${url.search}` !== `${location.pathname}${location.search}`) {
-      showLoader();
+      loader?.classList.add("is-active");
+      setTimeout(hideLoader, 4000); // failsafe: nunca dejar el overlay puesto
     }
   });
 
+  // --- Botones de formularios: estado de carga ---
   document.querySelectorAll("form").forEach(form => {
     form.addEventListener("submit", () => {
       const submitter = form.querySelector("button[type='submit'], .btn-primary");
@@ -88,6 +93,7 @@
     });
   });
 
+  // --- Toasts a partir de las alertas ---
   const toastRoot = document.createElement("div");
   toastRoot.className = "toast-stack";
   document.body.appendChild(toastRoot);
@@ -101,21 +107,10 @@
     setTimeout(() => toast.classList.remove("show"), 4200);
   });
 
+  // --- Animación de entrada (cosmética; el contenido ya es visible por CSS) ---
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (!reduceMotion) {
-    const revealItems = document.querySelectorAll(".service-tile, .quick-path-item, .gallery-item, .stat, .turno-item");
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("is-visible");
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.08 });
-
-    revealItems.forEach(item => {
-      item.classList.add("reveal-on-scroll");
-      observer.observe(item);
-    });
+    document.querySelectorAll(".service-tile, .quick-path-item, .gallery-item, .stat, .turno-item")
+      .forEach(item => item.classList.add("reveal-on-scroll", "is-visible"));
   }
 })();

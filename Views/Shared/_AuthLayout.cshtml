@@ -11,7 +11,18 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>@ViewData["Title"] · @(tenantNombre ?? "Generador de Turnos")</title>
+    <title>@ViewData["Title"] - @(tenantNombre ?? "Generador de Turnos")</title>
+    <script>
+        // Auto-sanado de service workers/caché viejos antes de pintar.
+        (() => {
+            try {
+                if (navigator.serviceWorker) {
+                    navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister())).catch(() => {});
+                }
+                if (window.caches) caches.keys().then(keys => keys.forEach(k => caches.delete(k))).catch(() => {});
+            } catch {}
+        })();
+    </script>
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" type="image/svg+xml" href="/icons/pwa-icon.svg" />
     <link rel="apple-touch-icon" href="/icons/pwa-icon.svg" />
@@ -22,7 +33,6 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-    <div class="app-loader" data-app-loader aria-hidden="true"><span></span></div>
     @if (TempData["Error"] != null)
     {
         <div class="alert alert-danger text-center mb-0 rounded-0">@TempData["Error"]</div>

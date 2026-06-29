@@ -176,7 +176,25 @@ var staticFileProvider = new FileExtensionContentTypeProvider();
 staticFileProvider.Mappings[".webmanifest"] = "application/manifest+json";
 app.UseStaticFiles(new StaticFileOptions
 {
-    ContentTypeProvider = staticFileProvider
+    ContentTypeProvider = staticFileProvider,
+    OnPrepareResponse = ctx =>
+    {
+        var path = ctx.Context.Request.Path.Value ?? "";
+        if (path.EndsWith("/service-worker.js", StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.Context.Response.Headers.CacheControl = "no-cache, no-store, must-revalidate";
+            ctx.Context.Response.Headers.Pragma = "no-cache";
+            ctx.Context.Response.Headers.Expires = "0";
+            return;
+        }
+
+        if (path.EndsWith(".css", StringComparison.OrdinalIgnoreCase) ||
+            path.EndsWith(".js", StringComparison.OrdinalIgnoreCase) ||
+            path.EndsWith(".webmanifest", StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.Context.Response.Headers.CacheControl = "public, max-age=0, must-revalidate";
+        }
+    }
 });
 app.UseRouting();
 if (allowedOrigins.Length > 0) app.UseCors("ConfiguredOrigins");

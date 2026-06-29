@@ -1,71 +1,21 @@
-const CACHE_VERSION = "barberia-urbana-v2";
-const APP_SHELL = [
-  "/",
-  "/offline.html",
-  "/css/site.css",
-  "/js/site.js",
-  "/js/money.js",
-  "/manifest.webmanifest",
-  "/icons/pwa-icon.svg",
-  "/favicon.ico"
-];
-
-self.addEventListener("install", event => {
-  event.waitUntil(
-    caches.open(CACHE_VERSION)
-      .then(cache => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting())
-  );
-});
+// Service worker desactivado a propósito (causaba que la web se viera "vieja"
+// hasta borrar datos del sitio). Este SW se auto-elimina, borra toda la caché
+// y recarga las pestañas una vez, para que cualquier cliente quede limpio.
+self.addEventListener("install", () => self.skipWaiting());
 
 self.addEventListener("activate", event => {
-  event.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(keys
-        .filter(key => key !== CACHE_VERSION)
-        .map(key => caches.delete(key))))
-      .then(() => self.clients.claim())
-  );
-});
-
-self.addEventListener("fetch", event => {
-  const request = event.request;
-  if (request.method !== "GET") return;
-
-  if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request)
-        .then(response => {
-          const copy = response.clone();
-          caches.open(CACHE_VERSION).then(cache => cache.put(request, copy));
-          return response;
-        })
-        .catch(() => caches.match(request).then(cached => cached || caches.match("/offline.html")))
-    );
-    return;
-  }
-
-  event.respondWith(
-    caches.match(request).then(cached => {
-      if (cached) {
-        event.waitUntil(
-          fetch(request)
-            .then(response => {
-              if (response && response.status === 200) {
-                const copy = response.clone();
-                caches.open(CACHE_VERSION).then(cache => cache.put(request, copy));
-              }
-            })
-            .catch(() => {})
-        );
-        return cached;
+  event.waitUntil((async () => {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+      await self.registration.unregister();
+      const clients = await self.clients.matchAll({ type: "window" });
+      for (const client of clients) {
+        try { client.navigate(client.url); } catch (_) {}
       }
-      return fetch(request).then(response => {
-        if (!response || response.status !== 200) return response;
-        const copy = response.clone();
-        caches.open(CACHE_VERSION).then(cache => cache.put(request, copy));
-        return response;
-      }).catch(() => caches.match("/offline.html"));
-    })
-  );
+    } catch (_) {}
+  })());
 });
+
+// Siempre red directa; nunca servir desde caché.
+self.addEventListener("fetch", () => {});
