@@ -3,6 +3,7 @@
 La aplicacion soporta dos formas de acceso:
 
 - Portal general: `https://jfsvtech.com`
+- Panel SaaS: `https://admin.jfsvtech.com`
 - Negocio por subdominio: `https://{slug}.jfsvtech.com`
 - Compatibilidad antigua: `https://jfsvtech.com/{slug}`
 
@@ -25,6 +26,13 @@ ADMIN_DB_URL=...
 ## Comportamiento
 
 Si el host es `jfsvtech.com` o `www.jfsvtech.com`, la app muestra el portal general.
+
+Si el host es `admin.jfsvtech.com`, la app abre el panel SaaS:
+
+```txt
+https://admin.jfsvtech.com       -> /super
+https://admin.jfsvtech.com/login -> /super/login
+```
 
 Si el host termina en `.jfsvtech.com`, la app toma el primer subdominio como `slug`:
 
@@ -67,6 +75,8 @@ Con la app corriendo en `http://localhost:5221` y `App__BaseDomain=jfsvtech.com`
 
 ```powershell
 curl.exe -H "Host: jfsvtech.com" http://localhost:5221/
+curl.exe -H "Host: admin.jfsvtech.com" http://localhost:5221/
+curl.exe -H "Host: admin.jfsvtech.com" http://localhost:5221/login
 curl.exe -H "Host: nenebarber.jfsvtech.com" http://localhost:5221/
 curl.exe -H "Host: q2.jfsvtech.com" http://localhost:5221/
 curl.exe -H "Host: empresaquenoexiste.jfsvtech.com" http://localhost:5221/
@@ -89,6 +99,8 @@ curl.exe -H "Host: q2.jfsvtech.com" http://localhost:5221/login
 
 ```txt
 https://jfsvtech.com
+https://admin.jfsvtech.com
+https://admin.jfsvtech.com/login
 https://nenebarber.jfsvtech.com
 https://q2.jfsvtech.com
 https://nenebarber.jfsvtech.com/login

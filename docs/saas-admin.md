@@ -2,11 +2,13 @@
 
 ## Superadmins globales
 
-El panel SaaS vive en:
+El panel SaaS vive en el subdominio reservado:
 
 ```txt
-/super/login
+https://admin.jfsvtech.com/login
 ```
+
+Internamente ese host se enruta a `/super/login` y `/super`, pero no necesitas usar `https://jfsvtech.com/super/login`.
 
 Los superadmins no pertenecen a ninguna empresa. En base de datos quedan como:
 

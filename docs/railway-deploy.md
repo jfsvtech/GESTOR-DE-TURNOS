@@ -92,6 +92,7 @@ El SuperAdmin puede revisar el estado en `/super/configuracion/correo`; los secr
 4. Si usas dominio propio, agrega el CNAME que Railway indique.
 5. Para negocios por subdominio, configura tambien el wildcard `*.jfsvtech.com` en DNS y Railway.
 6. Con `App__BaseDomain=jfsvtech.com`, la app resuelve automaticamente:
+   - `https://admin.jfsvtech.com` para el panel SaaS
    - `https://nenebarber.jfsvtech.com`
    - `https://q2.jfsvtech.com`
 
@@ -134,8 +135,9 @@ La base de datos debe guardar solo la URL publica/segura de la imagen.
 - [ ] Dominio HTTPS activo.
 - [ ] `App__BaseDomain=jfsvtech.com` configurado.
 - [ ] Wildcard `*.jfsvtech.com` activo en DNS/Railway.
+- [ ] `admin.jfsvtech.com` apunta al mismo servicio Railway de esta app.
 - [ ] `SuperAdmin__BootstrapPassword` configurado con una clave fuerte.
-- [ ] Entrar a `/super/login` con `jfsvtech@gmail.com` y `juliansernavasco@gmail.com`.
+- [ ] Entrar a `https://admin.jfsvtech.com/login` con `jfsvtech@gmail.com` y `juliansernavasco@gmail.com`.
 - [ ] Usuarios nuevos no pueden entrar sin verificar correo.
 - [ ] `Data/schema.sql` aplicado.
 - [ ] Revisar si `ex_turnos_no_solape_activos` fue creado.

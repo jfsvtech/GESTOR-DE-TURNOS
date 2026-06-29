@@ -6,6 +6,7 @@ namespace GeneradorTurnos.Tenancy;
 public interface ITenantHostResolver
 {
     bool IsStaticOrSystemPath(PathString path);
+    bool IsReservedHost(HostString host, string reservedSubdomain);
     bool TryGetSlugFromHost(HostString host, out string slug);
     Task<Tenant?> ResolveAsync(HostString host);
 }
@@ -52,6 +53,15 @@ public class TenantHostResolver : ITenantHostResolver
         var value = path.Value ?? "/";
         if (IgnoredExactPaths.Contains(value)) return true;
         return IgnoredPathPrefixes.Any(prefix => value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public bool IsReservedHost(HostString host, string reservedSubdomain)
+    {
+        var baseDomain = (_configuration["App:BaseDomain"] ?? "").Trim().Trim('.').ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(baseDomain)) return false;
+
+        var currentHost = host.Host.Trim().Trim('.').ToLowerInvariant();
+        return currentHost.Equals($"{reservedSubdomain}.{baseDomain}", StringComparison.OrdinalIgnoreCase);
     }
 
     public bool TryGetSlugFromHost(HostString host, out string slug)

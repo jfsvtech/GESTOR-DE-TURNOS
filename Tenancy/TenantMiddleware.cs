@@ -16,6 +16,13 @@ public class TenantMiddleware
             return;
         }
 
+        if (hostResolver.IsReservedHost(context.Request.Host, "admin"))
+        {
+            MapAdminHost(context);
+            await _next(context);
+            return;
+        }
+
         if (!hostResolver.TryGetSlugFromHost(context.Request.Host, out var hostSlug))
         {
             await _next(context);
@@ -74,6 +81,27 @@ public class TenantMiddleware
             return new PathString($"/{slug}{value}");
 
         return new PathString($"/{slug}{value}");
+    }
+
+    private static void MapAdminHost(HttpContext context)
+    {
+        var value = context.Request.Path.Value ?? "/";
+        if (value == "/")
+        {
+            context.Request.Path = "/super";
+            return;
+        }
+
+        if (value.Equals("/login", StringComparison.OrdinalIgnoreCase))
+        {
+            context.Request.Path = "/super/login";
+            return;
+        }
+
+        if (!value.StartsWith("/super", StringComparison.OrdinalIgnoreCase))
+        {
+            context.Request.Path = "/super" + value;
+        }
     }
 
     private static void RedirectClean(HttpContext context, string cleanPath)
