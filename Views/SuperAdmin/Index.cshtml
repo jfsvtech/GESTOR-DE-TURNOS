@@ -10,6 +10,7 @@
         <p class="page-sub mb-0">Control comercial, uso y ventas consolidadas de todas las empresas.</p>
     </div>
     <div class="d-flex gap-2">
+        <a class="btn btn-outline-primary" asp-action="ConfiguracionCorreo"><i class="bi bi-envelope-check me-1"></i>Correo</a>
         <a class="btn btn-primary" asp-action="Nuevo"><i class="bi bi-plus-lg me-1"></i>Nuevo negocio</a>
         <form asp-action="Salir" method="post">
             @Html.AntiForgeryToken()
@@ -73,6 +74,9 @@ else
                             else { <span class="badge bg-secondary">Inactivo</span> }
                         </td>
                         <td class="text-end">
+                            <a class="btn btn-sm btn-outline-primary" asp-action="Empresa" asp-route-id="@t.Id">
+                                <i class="bi bi-sliders me-1"></i>Gestionar
+                            </a>
                             <form asp-action="CambiarEstado" asp-route-id="@t.Id" method="post" class="d-inline">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="activo" value="@((!t.Activo).ToString().ToLower())" />

@@ -58,10 +58,10 @@ public static class EstadoTurnoExtensions
 
     public static string Badge(this EstadoTurno e) => e switch
     {
-        EstadoTurno.Pendiente => "bg-warning text-dark",
-        EstadoTurno.Confirmado => "bg-info text-dark",
-        EstadoTurno.Completado => "bg-success",
-        EstadoTurno.Cancelado => "bg-secondary",
+        EstadoTurno.Pendiente => "bg-warning text-dark status-pendiente",
+        EstadoTurno.Confirmado => "bg-success status-confirmada",
+        EstadoTurno.Completado => "bg-secondary status-finalizada",
+        EstadoTurno.Cancelado => "bg-danger status-cancelada",
         EstadoTurno.NoShow => "bg-danger",
         _ => "bg-light text-dark"
     };

@@ -5,7 +5,9 @@ using GeneradorTurnos.Services;
 using GeneradorTurnos.Tenancy;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.StaticFiles;
+using System.Threading.RateLimiting;
 
 // Cultura es-CO: miles con punto (150.000) y decimales con coma.
 var culturaCo = new CultureInfo("es-CO");
@@ -38,13 +40,59 @@ builder.Services.AddScoped<IFileStorage, FileStorage>();
 builder.Services.AddScoped<DisponibilidadService>();
 builder.Services.AddScoped<TurnoService>();
 builder.Services.AddScoped<ExcelService>();
-builder.Services.AddScoped<IEmailSender, EmailSender>();
+builder.Services.AddHttpClient<IEmailSender, EmailSender>();
 builder.Services.AddScoped<DatabaseInitializer>();
 builder.Services.AddHostedService<ReminderBackgroundService>();
 
 // ---- Tenant context (por petición) ----
 builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddScoped<TenantResolutionFilter>();
+
+// ---- CORS: cerrado por defecto; solo habilita origenes declarados en App:AllowedOrigins ----
+var allowedOrigins = builder.Configuration.GetSection("App:AllowedOrigins").Get<string[]>() ?? [];
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("ConfiguredOrigins", policy =>
+    {
+        if (allowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(allowedOrigins)
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+        }
+    });
+});
+
+// ---- Rate limiting: protege login, registro y endpoints publicos de disponibilidad ----
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddFixedWindowLimiter("auth", limiter =>
+    {
+        limiter.PermitLimit = 8;
+        limiter.Window = TimeSpan.FromMinutes(5);
+        limiter.QueueLimit = 0;
+        limiter.AutoReplenishment = true;
+    });
+    options.AddFixedWindowLimiter("slots", limiter =>
+    {
+        limiter.PermitLimit = 60;
+        limiter.Window = TimeSpan.FromMinutes(1);
+        limiter.QueueLimit = 0;
+        limiter.AutoReplenishment = true;
+    });
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "anon",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 240,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+});
 
 // ---- DataProtection (claves persistidas para que las cookies sobrevivan reinicios) ----
 var keysDir = Path.Combine(builder.Environment.ContentRootPath, "keys");
@@ -59,6 +107,10 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         options.Cookie.Name = "GeneradorTurnos.Auth";
         options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+            ? CookieSecurePolicy.SameAsRequest
+            : CookieSecurePolicy.Always;
         options.ExpireTimeSpan = TimeSpan.FromDays(7);
         options.SlidingExpiration = true;
         options.AccessDeniedPath = "/";
@@ -101,6 +153,25 @@ var locOptions = new Microsoft.AspNetCore.Builder.RequestLocalizationOptions()
 app.UseRequestLocalization(locOptions);
 
 app.UseHttpsRedirection();
+if (builder.Configuration.GetValue("Security:EnableSecurityHeaders", true))
+{
+    app.Use(async (context, next) =>
+    {
+        var headers = context.Response.Headers;
+        headers.TryAdd("X-Content-Type-Options", "nosniff");
+        headers.TryAdd("X-Frame-Options", "DENY");
+        headers.TryAdd("Referrer-Policy", "strict-origin-when-cross-origin");
+        headers.TryAdd("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+        headers.TryAdd("Content-Security-Policy",
+            "default-src 'self'; " +
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; " +
+            "font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; " +
+            "img-src 'self' data: blob: https://images.unsplash.com https://api.qrserver.com; " +
+            "connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+        await next();
+    });
+}
 var staticFileProvider = new FileExtensionContentTypeProvider();
 staticFileProvider.Mappings[".webmanifest"] = "application/manifest+json";
 app.UseStaticFiles(new StaticFileOptions
@@ -108,6 +179,8 @@ app.UseStaticFiles(new StaticFileOptions
     ContentTypeProvider = staticFileProvider
 });
 app.UseRouting();
+if (allowedOrigins.Length > 0) app.UseCors("ConfiguredOrigins");
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();

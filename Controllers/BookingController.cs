@@ -6,6 +6,7 @@ using GeneradorTurnos.Services;
 using GeneradorTurnos.Tenancy;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GeneradorTurnos.Controllers;
 
@@ -87,13 +88,17 @@ public class BookingController : TenantBaseController
 
     // API: huecos disponibles (consumida por JS).
     [HttpGet("api/slots")]
+    [EnableRateLimiting("slots")]
     public async Task<IActionResult> Slots(int empleadoId, int servicioId, string fecha)
     {
         if (!DateTime.TryParse(fecha, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dia))
             dia = DateTime.Today;
 
-        var servicio = await _servicios.GetByIdAsync(TenantId, servicioId);
-        if (servicio is null) return Json(Array.Empty<object>());
+        var empleado = await _usuarios.GetByIdInTenantAsync(TenantId, empleadoId);
+        if (empleado is null || !empleado.Activo || !empleado.Atiende) return Json(Array.Empty<object>());
+
+        var servicio = await _servicios.GetEfectivoAsync(TenantId, empleadoId, servicioId);
+        if (servicio is null || !servicio.Activo) return Json(Array.Empty<object>());
 
         var slots = await _disponibilidad.CalcularSlotsAsync(TenantId, empleadoId, servicio.DuracionMinutos, dia);
         return Json(slots.Select(s => new

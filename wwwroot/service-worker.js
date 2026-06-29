@@ -1,4 +1,4 @@
-const CACHE_VERSION = "turnos-pwa-v1";
+const CACHE_VERSION = "barberia-urbana-v2";
 const APP_SHELL = [
   "/",
   "/offline.html",
@@ -47,13 +47,25 @@ self.addEventListener("fetch", event => {
 
   event.respondWith(
     caches.match(request).then(cached => {
-      if (cached) return cached;
+      if (cached) {
+        event.waitUntil(
+          fetch(request)
+            .then(response => {
+              if (response && response.status === 200) {
+                const copy = response.clone();
+                caches.open(CACHE_VERSION).then(cache => cache.put(request, copy));
+              }
+            })
+            .catch(() => {})
+        );
+        return cached;
+      }
       return fetch(request).then(response => {
         if (!response || response.status !== 200) return response;
         const copy = response.clone();
         caches.open(CACHE_VERSION).then(cache => cache.put(request, copy));
         return response;
-      });
+      }).catch(() => caches.match("/offline.html"));
     })
   );
 });

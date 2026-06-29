@@ -247,6 +247,49 @@ public class DashboardBarberoVm
     public DateTime Hasta { get; set; }
 }
 
+public class SuperAdminEmpresaDetalleVm
+{
+    public Tenant Empresa { get; set; } = new();
+    public List<Usuario> Usuarios { get; set; } = new();
+    public List<PagoSuscripcion> Pagos { get; set; } = new();
+    public List<Auditoria> Auditoria { get; set; } = new();
+    public UsuarioInternoFormVm NuevoUsuario { get; set; } = new();
+    public PagoSuscripcionFormVm NuevoPago { get; set; } = new();
+}
+
+public class UsuarioInternoFormVm
+{
+    public int TenantId { get; set; }
+    [Required] public string Nombre { get; set; } = "";
+    public string? Cedula { get; set; }
+    [Required, EmailAddress] public string Email { get; set; } = "";
+    public string? Telefono { get; set; }
+    [Required] public Rol Rol { get; set; } = Rol.Barbero;
+    public string? Password { get; set; }
+    public bool Activo { get; set; } = true;
+}
+
+public class SuscripcionFormVm
+{
+    public int TenantId { get; set; }
+    [Required] public string Plan { get; set; } = "Basico";
+    [Required] public string EstadoSuscripcion { get; set; } = "Activo";
+    public DateTime? SuscripcionInicio { get; set; }
+    public DateTime? SuscripcionVencimiento { get; set; }
+    [Range(1, 60)] public int RecordatorioPagoDias { get; set; } = 7;
+}
+
+public class PagoSuscripcionFormVm
+{
+    public int TenantId { get; set; }
+    [Range(0.01, 999999999)] public decimal Monto { get; set; }
+    [Required] public DateTime PeriodoInicio { get; set; } = DateTime.Today;
+    [Required] public DateTime PeriodoFin { get; set; } = DateTime.Today.AddMonths(1);
+    public string? Metodo { get; set; }
+    public string? Referencia { get; set; }
+    public string? Nota { get; set; }
+}
+
 public class HoyBarberoVm
 {
     public DateTime Fecha { get; set; } = DateTime.Today;
@@ -262,4 +305,20 @@ public class SuperAdminDashboardVm
     public int EmpresasActivas { get; set; }
     public int UsuariosTotales { get; set; }
     public int TurnosTotales { get; set; }
+}
+
+public class EmailConfigStatusVm
+{
+    public bool Enabled { get; set; }
+    public string Provider { get; set; } = "Smtp";
+    public string From { get; set; } = "";
+    public string FromName { get; set; } = "";
+    public List<ConfigSecretStatus> Variables { get; set; } = new();
+}
+
+public class ConfigSecretStatus
+{
+    public string Name { get; set; } = "";
+    public bool Present { get; set; }
+    public string MaskedValue { get; set; } = "";
 }

@@ -6,7 +6,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0f766e" />
+    <meta name="theme-color" content="#059669" />
     <meta name="description" content="Acceso centralizado para gestionar turnos." />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
+    <div class="app-loader" data-app-loader aria-hidden="true"><span></span></div>
     @if (TempData["Error"] != null)
     {
         <div class="alert alert-danger text-center mb-0 rounded-0">@TempData["Error"]</div>

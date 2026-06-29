@@ -1,13 +1,13 @@
 {
-  "name": "Generador de Turnos",
-  "short_name": "Turnos",
-  "description": "Agenda inteligente para negocios, trabajadores y clientes.",
+  "name": "Barberia Urbana Moderna",
+  "short_name": "Barberia",
+  "description": "PWA profesional para turnos, clientes, trabajadores, pagos y reportes.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
-  "background_color": "#f5f6fb",
-  "theme_color": "#0f766e",
+  "background_color": "#0B1120",
+  "theme_color": "#059669",
   "orientation": "portrait-primary",
   "lang": "es-CO",
   "dir": "ltr",
@@ -22,10 +22,10 @@
   ],
   "shortcuts": [
     {
-      "name": "Ver negocios",
-      "short_name": "Negocios",
+      "name": "Abrir panel",
+      "short_name": "Panel",
       "url": "/",
-      "description": "Abrir el selector de empresas"
+      "description": "Entrar al panel principal"
     },
     {
       "name": "Barberia Centro",

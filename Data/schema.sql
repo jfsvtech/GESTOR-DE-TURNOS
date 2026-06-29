@@ -85,6 +85,10 @@ CREATE INDEX IF NOT EXISTS ix_turnos_emp_fecha
     ON turnos(tenant_id, empleado_id, fecha_hora_inicio);
 CREATE INDEX IF NOT EXISTS ix_turnos_cliente
     ON turnos(tenant_id, cliente_id);
+CREATE INDEX IF NOT EXISTS ix_turnos_tenant_fecha
+    ON turnos(tenant_id, fecha_hora_inicio);
+CREATE INDEX IF NOT EXISTS ix_turnos_emp_rango
+    ON turnos(tenant_id, empleado_id, fecha_hora_inicio, fecha_hora_fin);
 
 -- ============================================================
 --  Migraciones idempotentes (se aplican en cada arranque)
@@ -92,6 +96,14 @@ CREATE INDEX IF NOT EXISTS ix_turnos_cliente
 
 -- Limite comercial de usuarios por empresa.
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS max_usuarios INT NOT NULL DEFAULT 10;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS suscripcion_inicio DATE NULL;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS suscripcion_vencimiento DATE NULL;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS estado_suscripcion TEXT NOT NULL DEFAULT 'Activo';
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS recordatorio_pago_dias INT NOT NULL DEFAULT 7;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NULL;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP NULL;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS created_by INT NULL;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS updated_by INT NULL;
 
 -- Clientes sin contraseña (se identifican con cédula + nombre + teléfono).
 ALTER TABLE usuarios ALTER COLUMN password_hash DROP NOT NULL;
@@ -104,12 +116,27 @@ ALTER TABLE empleado_servicios ADD COLUMN IF NOT EXISTS duracion_override INT   
 ALTER TABLE turnos ADD COLUMN IF NOT EXISTS origen INT NOT NULL DEFAULT 1;
 ALTER TABLE turnos ADD COLUMN IF NOT EXISTS recordatorio_cliente_enviado BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE turnos ADD COLUMN IF NOT EXISTS recordatorio_barbero_enviado BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE turnos ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NULL;
+ALTER TABLE turnos ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP NULL;
+ALTER TABLE turnos ADD COLUMN IF NOT EXISTS created_by INT NULL;
+ALTER TABLE turnos ADD COLUMN IF NOT EXISTS updated_by INT NULL;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ck_turnos_rango_valido') THEN
+        ALTER TABLE turnos ADD CONSTRAINT ck_turnos_rango_valido CHECK (fecha_hora_fin > fecha_hora_inicio);
+    END IF;
+END $$;
 
 -- Clientes autónomos: registro con correo + contraseña + verificación.
 ALTER TABLE usuarios ALTER COLUMN cedula DROP NOT NULL;
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS email_verificado   BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS token_verificacion TEXT      NULL;
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS token_expira        TIMESTAMP NULL;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS updated_at          TIMESTAMP NULL;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS deleted_at          TIMESTAMP NULL;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS created_by          INT NULL;
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS updated_by          INT NULL;
 
 -- Permitir múltiples clientes sin cédula (NULL); cédula única solo cuando existe.
 DROP INDEX IF EXISTS ux_usuarios_tenant_cedula;
@@ -118,6 +145,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_usuarios_tenant_cedula
 -- Email único por empresa (login de clientes).
 CREATE UNIQUE INDEX IF NOT EXISTS ux_usuarios_tenant_email
     ON usuarios(tenant_id, lower(email)) WHERE email IS NOT NULL;
+CREATE INDEX IF NOT EXISTS ix_usuarios_tenant_rol_activo
+    ON usuarios(tenant_id, rol, activo);
 
 -- El staff existente no requiere verificación; el cliente demo queda verificado.
 UPDATE usuarios SET email_verificado = TRUE
@@ -152,6 +181,10 @@ CREATE TABLE IF NOT EXISTS galeria (
     fecha_creacion  TIMESTAMP NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS ix_galeria_tenant ON galeria(tenant_id);
+ALTER TABLE galeria ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NULL;
+ALTER TABLE galeria ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP NULL;
+ALTER TABLE galeria ADD COLUMN IF NOT EXISTS created_by INT NULL;
+ALTER TABLE galeria ADD COLUMN IF NOT EXISTS updated_by INT NULL;
 
 -- Gastos del negocio (luz, insumos, etc.).
 CREATE TABLE IF NOT EXISTS gastos (
@@ -164,6 +197,10 @@ CREATE TABLE IF NOT EXISTS gastos (
     fecha_creacion  TIMESTAMP     NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS ix_gastos_tenant_fecha ON gastos(tenant_id, fecha);
+ALTER TABLE gastos ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NULL;
+ALTER TABLE gastos ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP NULL;
+ALTER TABLE gastos ADD COLUMN IF NOT EXISTS created_by INT NULL;
+ALTER TABLE gastos ADD COLUMN IF NOT EXISTS updated_by INT NULL;
 
 -- Notificaciones internas para avisar al profesional cambios hechos por clientes.
 CREATE TABLE IF NOT EXISTS notificaciones (
@@ -195,6 +232,16 @@ CREATE TABLE IF NOT EXISTS servicio_solicitudes (
 );
 CREATE INDEX IF NOT EXISTS ix_servicio_solicitudes_pendientes
     ON servicio_solicitudes(tenant_id, estado, fecha_creacion DESC);
+CREATE INDEX IF NOT EXISTS ix_servicios_tenant_activo
+    ON servicios(tenant_id, activo);
+CREATE INDEX IF NOT EXISTS ix_empleado_servicios_tenant_emp
+    ON empleado_servicios(tenant_id, empleado_id);
+CREATE INDEX IF NOT EXISTS ix_empleado_servicios_tenant_servicio
+    ON empleado_servicios(tenant_id, servicio_id);
+CREATE INDEX IF NOT EXISTS ix_horarios_tenant_emp
+    ON horarios_trabajo(tenant_id, empleado_id, dia_semana);
+CREATE INDEX IF NOT EXISTS ix_bloqueos_emp_rango
+    ON bloqueos(tenant_id, empleado_id, fecha_hora_inicio, fecha_hora_fin);
 
 -- Control de correos automaticos diarios.
 CREATE TABLE IF NOT EXISTS email_envios (
@@ -206,3 +253,70 @@ CREATE TABLE IF NOT EXISTS email_envios (
     fecha_envio    TIMESTAMP NOT NULL DEFAULT now(),
     UNIQUE(tenant_id, usuario_id, tipo, fecha)
 );
+
+-- Control SaaS: pagos, suscripciones y auditoria por empresa.
+CREATE TABLE IF NOT EXISTS pagos_suscripcion (
+    id              SERIAL PRIMARY KEY,
+    tenant_id       INT           NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    monto           NUMERIC(12,2) NOT NULL,
+    periodo_inicio  DATE          NOT NULL,
+    periodo_fin     DATE          NOT NULL,
+    metodo          TEXT          NULL,
+    referencia      TEXT          NULL,
+    nota            TEXT          NULL,
+    fecha_pago      TIMESTAMP     NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_pagos_suscripcion_tenant
+    ON pagos_suscripcion(tenant_id, fecha_pago DESC);
+
+CREATE TABLE IF NOT EXISTS auditoria (
+    id              SERIAL PRIMARY KEY,
+    tenant_id       INT       NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    usuario_id      INT       NULL REFERENCES usuarios(id) ON DELETE SET NULL,
+    actor_nombre    TEXT      NOT NULL,
+    accion          TEXT      NOT NULL,
+    entidad         TEXT      NOT NULL,
+    entidad_id      INT       NULL,
+    detalle         TEXT      NULL,
+    fecha_creacion  TIMESTAMP NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ix_auditoria_tenant_fecha
+    ON auditoria(tenant_id, fecha_creacion DESC);
+
+-- Blindaje anti doble reserva a nivel base de datos.
+-- Requiere btree_gist. Si el usuario de BD no puede crear extensiones o si ya existen solapes,
+-- la app mantiene la validacion de dominio y deja pendiente la restriccion operativa.
+DO $$
+BEGIN
+    CREATE EXTENSION IF NOT EXISTS btree_gist;
+EXCEPTION
+    WHEN insufficient_privilege THEN
+        RAISE NOTICE 'No hay permisos para crear btree_gist; se omite exclusion constraint anti-solape.';
+END $$;
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'btree_gist')
+       AND NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ex_turnos_no_solape_activos')
+       AND NOT EXISTS (
+            SELECT 1
+            FROM turnos a
+            JOIN turnos b ON b.id > a.id
+             AND b.tenant_id = a.tenant_id
+             AND b.empleado_id = a.empleado_id
+             AND b.estado NOT IN (4,5)
+             AND a.estado NOT IN (4,5)
+             AND a.fecha_hora_inicio < b.fecha_hora_fin
+             AND a.fecha_hora_fin > b.fecha_hora_inicio
+       )
+    THEN
+        ALTER TABLE turnos
+            ADD CONSTRAINT ex_turnos_no_solape_activos
+            EXCLUDE USING gist (
+                tenant_id WITH =,
+                empleado_id WITH =,
+                tsrange(fecha_hora_inicio, fecha_hora_fin, '[)') WITH &&
+            )
+            WHERE (estado NOT IN (4,5));
+    END IF;
+END $$;

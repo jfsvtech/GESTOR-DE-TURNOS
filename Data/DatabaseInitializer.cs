@@ -53,8 +53,7 @@ public class DatabaseInitializer
     private async Task EnsureDatabaseAsync()
     {
         var dbName = _config.GetValue<string>("App:DatabaseName") ?? "generadorturnos";
-        var adminConn = _config.GetConnectionString("AdminConnection")
-            ?? throw new InvalidOperationException("Falta 'AdminConnection'.");
+        var adminConn = ConnectionStringResolver.GetAdminConnectionString(_config);
 
         await using var conn = new NpgsqlConnection(adminConn);
         await conn.OpenAsync();
@@ -75,7 +74,7 @@ public class DatabaseInitializer
         var path = Path.Combine(_env.ContentRootPath, "Data", "schema.sql");
         var sql = await File.ReadAllTextAsync(path);
 
-        var connStr = _config.GetConnectionString("DefaultConnection")!;
+        var connStr = ConnectionStringResolver.GetDefaultConnectionString(_config);
         await using var conn = new NpgsqlConnection(connStr);
         await conn.OpenAsync();
         await conn.ExecuteAsync(sql);
@@ -84,7 +83,7 @@ public class DatabaseInitializer
 
     private async Task SeedAsync()
     {
-        var connStr = _config.GetConnectionString("DefaultConnection")!;
+        var connStr = ConnectionStringResolver.GetDefaultConnectionString(_config);
         await using var conn = new NpgsqlConnection(connStr);
         await conn.OpenAsync();
 

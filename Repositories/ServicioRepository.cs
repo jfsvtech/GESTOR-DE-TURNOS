@@ -69,8 +69,8 @@ public class ServicioRepository : IServicioRepository
                            COALESCE(es.precio_override, s.precio)             AS precio,
                            s.activo
                     FROM servicios s
-                    JOIN empleado_servicios es ON es.servicio_id = s.id
-                    WHERE s.tenant_id=@tenantId AND es.empleado_id=@empleadoId"
+                    JOIN empleado_servicios es ON es.servicio_id = s.id AND es.tenant_id = s.tenant_id
+                    WHERE s.tenant_id=@tenantId AND es.tenant_id=@tenantId AND es.empleado_id=@empleadoId"
                   + (soloActivos ? " AND s.activo=TRUE" : "") + " ORDER BY s.nombre";
         return (await c.QueryAsync<Servicio>(sql, new { tenantId, empleadoId })).ToList();
     }
@@ -84,8 +84,8 @@ public class ServicioRepository : IServicioRepository
                    COALESCE(es.precio_override, s.precio)             AS precio,
                    s.activo
             FROM servicios s
-            JOIN empleado_servicios es ON es.servicio_id = s.id
-            WHERE s.tenant_id=@tenantId AND es.empleado_id=@empleadoId AND s.id=@servicioId",
+            JOIN empleado_servicios es ON es.servicio_id = s.id AND es.tenant_id = s.tenant_id
+            WHERE s.tenant_id=@tenantId AND es.tenant_id=@tenantId AND es.empleado_id=@empleadoId AND s.id=@servicioId",
             new { tenantId, empleadoId, servicioId });
     }
 
@@ -97,8 +97,8 @@ public class ServicioRepository : IServicioRepository
                    COALESCE(es.precio_override, s.precio)             AS precio,
                    COALESCE(es.duracion_override, s.duracion_minutos) AS duracion_minutos
             FROM empleado_servicios es
-            JOIN usuarios u  ON u.id = es.empleado_id
-            JOIN servicios s ON s.id = es.servicio_id
+            JOIN usuarios u  ON u.id = es.empleado_id AND u.tenant_id = es.tenant_id
+            JOIN servicios s ON s.id = es.servicio_id AND s.tenant_id = es.tenant_id
             WHERE es.tenant_id=@tenantId AND es.servicio_id=@servicioId
               AND u.activo = TRUE AND u.atiende = TRUE AND s.activo = TRUE
             ORDER BY u.nombre", new { tenantId, servicioId });
@@ -113,7 +113,7 @@ public class ServicioRepository : IServicioRepository
                    s.activo, (es.id IS NOT NULL) AS ofrecido,
                    es.precio_override, es.duracion_override
             FROM servicios s
-            LEFT JOIN empleado_servicios es ON es.servicio_id = s.id AND es.empleado_id = @empleadoId
+            LEFT JOIN empleado_servicios es ON es.servicio_id = s.id AND es.empleado_id = @empleadoId AND es.tenant_id = s.tenant_id
             WHERE s.tenant_id=@tenantId AND s.activo = TRUE
             ORDER BY s.nombre", new { tenantId, empleadoId });
         return r.ToList();

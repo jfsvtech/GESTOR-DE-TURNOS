@@ -7,10 +7,12 @@ using GeneradorTurnos.Tenancy;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GeneradorTurnos.Controllers;
 
 [Route("{slug}/cuenta")]
+[EnableRateLimiting("auth")]
 public class AccountController : TenantBaseController
 {
     private readonly IUsuarioRepository _usuarios;

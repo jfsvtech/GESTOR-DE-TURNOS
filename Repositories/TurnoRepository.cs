@@ -47,7 +47,7 @@ public class TurnoRepository : ITurnoRepository
             SELECT * FROM turnos
             WHERE tenant_id=@tenantId AND empleado_id=@empleadoId
               AND estado NOT IN (@cancelado, @noshow)
-              AND fecha_hora_inicio >= @d0 AND fecha_hora_inicio < @d1
+              AND fecha_hora_inicio < @d1 AND fecha_hora_fin > @d0
             ORDER BY fecha_hora_inicio",
             new { tenantId, empleadoId, d0, d1, cancelado = (int)EstadoTurno.Cancelado, noshow = (int)EstadoTurno.NoShow });
         return r.ToList();

@@ -24,6 +24,9 @@ public interface IUsuarioRepository
     Task SetAtiendeAsync(int id, bool atiende);
     Task SetComisionAsync(int id, ComisionTipo tipo, decimal valor);
     Task SetFotoAsync(int id, string fotoUrl);
+    Task<List<Usuario>> GetByTenantAsync(int tenantId);
+    Task SetRolActivoAsync(int tenantId, int id, Rol rol, bool activo);
+    Task DeleteAsync(int tenantId, int id);
     Task<List<Usuario>> GetByRolAsync(int tenantId, Rol rol, bool soloActivos = true);
     Task<Usuario> UpsertClienteAsync(int tenantId, string cedula, string nombre, string? telefono);
 }
@@ -168,6 +171,29 @@ public class UsuarioRepository : IUsuarioRepository
     {
         using var c = _db.Create();
         await c.ExecuteAsync("UPDATE usuarios SET foto_url=@fotoUrl WHERE id=@id", new { id, fotoUrl });
+    }
+
+    public async Task<List<Usuario>> GetByTenantAsync(int tenantId)
+    {
+        using var c = _db.Create();
+        var r = await c.QueryAsync<Usuario>(
+            "SELECT * FROM usuarios WHERE tenant_id=@tenantId ORDER BY rol, nombre",
+            new { tenantId });
+        return r.ToList();
+    }
+
+    public async Task SetRolActivoAsync(int tenantId, int id, Rol rol, bool activo)
+    {
+        using var c = _db.Create();
+        await c.ExecuteAsync(
+            "UPDATE usuarios SET rol=@rol, activo=@activo WHERE tenant_id=@tenantId AND id=@id",
+            new { tenantId, id, rol = (int)rol, activo });
+    }
+
+    public async Task DeleteAsync(int tenantId, int id)
+    {
+        using var c = _db.Create();
+        await c.ExecuteAsync("DELETE FROM usuarios WHERE tenant_id=@tenantId AND id=@id", new { tenantId, id });
     }
 
     public async Task<List<Usuario>> GetByRolAsync(int tenantId, Rol rol, bool soloActivos = true)

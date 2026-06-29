@@ -6,6 +6,8 @@ obj/
 *.suo
 *.rsuser
 *.log
+.env
+.env.*
 
 appsettings.Development.json
 
@@ -16,6 +18,7 @@ keys/
 
 node_modules/
 dist/
+wwwroot/uploads/
 
 .claude/
 artifacts/

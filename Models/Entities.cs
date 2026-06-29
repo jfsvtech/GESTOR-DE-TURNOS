@@ -10,6 +10,10 @@ public class Tenant
     public int MaxUsuarios { get; set; } = 10;
     public bool Activo { get; set; } = true;
     public string? FotoUrl { get; set; }
+    public DateTime? SuscripcionInicio { get; set; }
+    public DateTime? SuscripcionVencimiento { get; set; }
+    public string EstadoSuscripcion { get; set; } = "Activo";
+    public int RecordatorioPagoDias { get; set; } = 7;
     public DateTime FechaCreacion { get; set; }
 }
 
@@ -56,6 +60,32 @@ public class Gasto
     public string? Categoria { get; set; }
     public decimal Monto { get; set; }
     public DateTime Fecha { get; set; }
+    public DateTime FechaCreacion { get; set; }
+}
+
+public class PagoSuscripcion
+{
+    public int Id { get; set; }
+    public int TenantId { get; set; }
+    public decimal Monto { get; set; }
+    public DateTime PeriodoInicio { get; set; }
+    public DateTime PeriodoFin { get; set; }
+    public string? Metodo { get; set; }
+    public string? Referencia { get; set; }
+    public string? Nota { get; set; }
+    public DateTime FechaPago { get; set; }
+}
+
+public class Auditoria
+{
+    public int Id { get; set; }
+    public int? TenantId { get; set; }
+    public int? UsuarioId { get; set; }
+    public string ActorNombre { get; set; } = "";
+    public string Accion { get; set; } = "";
+    public string Entidad { get; set; } = "";
+    public int? EntidadId { get; set; }
+    public string? Detalle { get; set; }
     public DateTime FechaCreacion { get; set; }
 }
 

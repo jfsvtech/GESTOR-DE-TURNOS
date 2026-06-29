@@ -10,7 +10,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0f766e" />
+    <meta name="theme-color" content="#059669" />
     <meta name="description" content="Gestiona turnos, clientes, trabajadores y ventas desde una app instalable." />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -124,6 +124,8 @@
             </div>
         </div>
     </nav>
+
+    <div class="app-loader" data-app-loader aria-hidden="true"><span></span></div>
 
     <main class="container py-4 flex-grow-1">
         @if (TempData["Ok"] != null)

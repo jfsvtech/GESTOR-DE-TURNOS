@@ -154,10 +154,13 @@ public class SaasTenantResumen
     public string Plan { get; set; } = "";
     public int MaxUsuarios { get; set; }
     public bool Activo { get; set; }
+    public DateTime? SuscripcionVencimiento { get; set; }
+    public string EstadoSuscripcion { get; set; } = "Activo";
     public DateTime FechaCreacion { get; set; }
     public int Usuarios { get; set; }
     public int Trabajadores { get; set; }
     public int Clientes { get; set; }
     public int Turnos { get; set; }
     public decimal Ventas { get; set; }
+    public int DiasVencimiento => SuscripcionVencimiento is null ? 9999 : (SuscripcionVencimiento.Value.Date - DateTime.Today).Days;
 }
