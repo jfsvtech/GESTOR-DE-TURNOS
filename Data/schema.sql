@@ -145,6 +145,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_usuarios_tenant_cedula
 -- Email único por empresa (login de clientes).
 CREATE UNIQUE INDEX IF NOT EXISTS ux_usuarios_tenant_email
     ON usuarios(tenant_id, lower(email)) WHERE email IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS ux_usuarios_global_email
+    ON usuarios(lower(email)) WHERE tenant_id IS NULL AND email IS NOT NULL;
 CREATE INDEX IF NOT EXISTS ix_usuarios_tenant_rol_activo
     ON usuarios(tenant_id, rol, activo);
 

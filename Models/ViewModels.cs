@@ -307,6 +307,13 @@ public class SuperAdminDashboardVm
     public int TurnosTotales { get; set; }
 }
 
+public class ResetProduccionVm
+{
+    [Required]
+    [Display(Name = "Frase de confirmacion")]
+    public string Confirmacion { get; set; } = "";
+}
+
 public class EmailConfigStatusVm
 {
     public bool Enabled { get; set; }

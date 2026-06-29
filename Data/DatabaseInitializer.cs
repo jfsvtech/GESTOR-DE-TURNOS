@@ -38,6 +38,7 @@ public class DatabaseInitializer
         {
             await EnsureDatabaseAsync();
             await ApplySchemaAsync();
+            await EnsureConfiguredSuperAdminsAsync();
 
             if (_config.GetValue("App:SeedDemoData", true))
                 await SeedAsync();
@@ -166,5 +167,60 @@ public class DatabaseInitializer
         await Horario(andres);
 
         _logger.LogInformation("Datos demo sembrados. Empresa: barberia-centro");
+    }
+
+    private async Task EnsureConfiguredSuperAdminsAsync()
+    {
+        var password = _config["SuperAdmin:BootstrapPassword"];
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            _logger.LogWarning("SuperAdmin:BootstrapPassword no configurado; no se crean superadmins globales automaticamente.");
+            return;
+        }
+
+        var emails = _config.GetSection("SuperAdmin:Emails").Get<string[]>()
+            ?? ["jfsvtech@gmail.com", "juliansernavasco@gmail.com"];
+        emails = emails
+            .Where(e => !string.IsNullOrWhiteSpace(e))
+            .Select(e => e.Trim().ToLowerInvariant())
+            .Distinct()
+            .ToArray();
+
+        if (emails.Length == 0) return;
+
+        var connStr = ConnectionStringResolver.GetDefaultConnectionString(_config);
+        await using var conn = new NpgsqlConnection(connStr);
+        await conn.OpenAsync();
+
+        var hash = BCrypt.Net.BCrypt.HashPassword(password);
+        foreach (var email in emails)
+        {
+            var nombre = email.Equals("juliansernavasco@gmail.com", StringComparison.OrdinalIgnoreCase)
+                ? "Julian Serna"
+                : "JFSV Tech";
+            var cedula = "super-" + new string(email.Where(char.IsLetterOrDigit).Take(32).ToArray());
+
+            await conn.ExecuteAsync(@"
+                INSERT INTO usuarios
+                    (tenant_id, rol, nombre, cedula, email, password_hash, activo, email_verificado, atiende)
+                SELECT NULL, @rol, @nombre, @cedula, @email, @hash, TRUE, TRUE, FALSE
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM usuarios
+                    WHERE tenant_id IS NULL AND lower(email) = lower(@email)
+                );
+
+                UPDATE usuarios
+                SET rol = @rol,
+                    nombre = @nombre,
+                    password_hash = @hash,
+                    activo = TRUE,
+                    email_verificado = TRUE,
+                    token_verificacion = NULL,
+                    token_expira = NULL
+                WHERE tenant_id IS NULL AND lower(email) = lower(@email);",
+                new { rol = (int)Rol.SuperAdmin, nombre, cedula, email, hash });
+        }
+
+        _logger.LogInformation("Superadmins globales verificados: {Emails}", string.Join(", ", emails));
     }
 }

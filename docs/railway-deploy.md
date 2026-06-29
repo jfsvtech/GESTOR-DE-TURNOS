@@ -55,9 +55,17 @@ Storage__Provider=Local
 Storage__MaxImageMb=5
 App__BaseDomain=jfsvtech.com
 AllowedHosts=*
+SuperAdmin__BootstrapPassword=UNA_CLAVE_SEGURA_TEMPORAL
 ```
 
 Railway provee `PORT`; el Dockerfile lo usa automaticamente.
+
+Con `SuperAdmin__BootstrapPassword`, el arranque crea/verifica estos superadmins globales:
+
+- `jfsvtech@gmail.com`
+- `juliansernavasco@gmail.com`
+
+Ambos quedan con `tenant_id=NULL`, rol `SuperAdmin`, activos y con correo verificado. Despues del primer ingreso, cambia la clave desde la base o implementa flujo de cambio de password antes de entregar accesos a terceros.
 
 ## 5. Email real con Gmail API
 
@@ -126,6 +134,8 @@ La base de datos debe guardar solo la URL publica/segura de la imagen.
 - [ ] Dominio HTTPS activo.
 - [ ] `App__BaseDomain=jfsvtech.com` configurado.
 - [ ] Wildcard `*.jfsvtech.com` activo en DNS/Railway.
+- [ ] `SuperAdmin__BootstrapPassword` configurado con una clave fuerte.
+- [ ] Entrar a `/super/login` con `jfsvtech@gmail.com` y `juliansernavasco@gmail.com`.
 - [ ] Usuarios nuevos no pueden entrar sin verificar correo.
 - [ ] `Data/schema.sql` aplicado.
 - [ ] Revisar si `ex_turnos_no_solape_activos` fue creado.

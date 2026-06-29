@@ -259,6 +259,27 @@ public class SuperAdminController : Controller
     public IActionResult Nuevo() => View(new TenantFormVm());
 
     [Authorize(Roles = "SuperAdmin")]
+    [HttpGet("produccion/limpiar")]
+    public IActionResult LimpiarProduccion() => View(new ResetProduccionVm());
+
+    [Authorize(Roles = "SuperAdmin")]
+    [HttpPost("produccion/limpiar")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> LimpiarProduccion(ResetProduccionVm vm)
+    {
+        const string frase = "LIMPIAR PRODUCCION";
+        if (!string.Equals(vm.Confirmacion?.Trim(), frase, StringComparison.Ordinal))
+        {
+            ModelState.AddModelError(nameof(vm.Confirmacion), $"Escribe exactamente: {frase}");
+            return View(vm);
+        }
+
+        var eliminadas = await _tenants.ResetProductionDataAsync(User.Identity?.Name ?? "SuperAdmin");
+        TempData["Ok"] = $"Produccion limpiada. Empresas eliminadas: {eliminadas}. Los superadmins globales se conservaron.";
+        return RedirectToAction(nameof(Index));
+    }
+
+    [Authorize(Roles = "SuperAdmin")]
     [HttpPost("nuevo")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Nuevo(TenantFormVm vm)

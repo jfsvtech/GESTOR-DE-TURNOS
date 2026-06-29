@@ -20,6 +20,7 @@ public interface ITenantRepository
     Task RegistrarPagoAsync(PagoSuscripcion pago);
     Task<List<Auditoria>> GetAuditoriaAsync(int tenantId, int limit = 80);
     Task AddAuditoriaAsync(Auditoria auditoria);
+    Task<int> ResetProductionDataAsync(string actor);
 }
 
 public class TenantRepository : ITenantRepository
@@ -170,5 +171,27 @@ public class TenantRepository : ITenantRepository
         await c.ExecuteAsync(@"
             INSERT INTO auditoria (tenant_id, usuario_id, actor_nombre, accion, entidad, entidad_id, detalle)
             VALUES (@TenantId, @UsuarioId, @ActorNombre, @Accion, @Entidad, @EntidadId, @Detalle)", auditoria);
+    }
+
+    public async Task<int> ResetProductionDataAsync(string actor)
+    {
+        using var c = _db.Create();
+        c.Open();
+        using var tx = c.BeginTransaction();
+
+        var tenants = await c.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM tenants", transaction: tx);
+        await c.ExecuteAsync("DELETE FROM tenants", transaction: tx);
+        await c.ExecuteAsync(
+            "DELETE FROM usuarios WHERE tenant_id IS NULL AND rol <> @superAdmin",
+            new { superAdmin = (int)Rol.SuperAdmin },
+            tx);
+        await c.ExecuteAsync(@"
+            INSERT INTO auditoria (tenant_id, actor_nombre, accion, entidad, detalle)
+            VALUES (NULL, @actor, 'Reset produccion', 'SaaS', @detalle)",
+            new { actor, detalle = $"Se eliminaron {tenants} empresas y sus datos asociados." },
+            tx);
+
+        tx.Commit();
+        return tenants;
     }
 }

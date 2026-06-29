@@ -11,6 +11,7 @@
     </div>
     <div class="d-flex gap-2">
         <a class="btn btn-outline-primary" asp-action="ConfiguracionCorreo"><i class="bi bi-envelope-check me-1"></i>Correo</a>
+        <a class="btn btn-outline-danger" asp-action="LimpiarProduccion"><i class="bi bi-trash3 me-1"></i>Limpiar produccion</a>
         <a class="btn btn-primary" asp-action="Nuevo"><i class="bi bi-plus-lg me-1"></i>Nuevo negocio</a>
         <form asp-action="Salir" method="post">
             @Html.AntiForgeryToken()
