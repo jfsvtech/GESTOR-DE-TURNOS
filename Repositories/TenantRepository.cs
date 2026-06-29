@@ -179,6 +179,17 @@ public class TenantRepository : ITenantRepository
         c.Open();
         using var tx = c.BeginTransaction();
 
+        var superAdmins = await c.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM usuarios WHERE tenant_id IS NULL AND rol = @superAdmin",
+            new { superAdmin = (int)Rol.SuperAdmin },
+            tx);
+        if (superAdmins == 0)
+        {
+            tx.Rollback();
+            throw new InvalidOperationException(
+                "No hay superadmins globales configurados. Define SuperAdmin__BootstrapPassword y reinicia antes de limpiar datos.");
+        }
+
         var tenants = await c.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM tenants", transaction: tx);
         await c.ExecuteAsync("DELETE FROM tenants", transaction: tx);
         await c.ExecuteAsync(

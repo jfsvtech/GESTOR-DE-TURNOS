@@ -150,17 +150,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_usuarios_global_email
 CREATE INDEX IF NOT EXISTS ix_usuarios_tenant_rol_activo
     ON usuarios(tenant_id, rol, activo);
 
--- El staff existente no requiere verificación; el cliente demo queda verificado.
+-- El staff existente no requiere verificacion al migrar desde versiones anteriores.
 UPDATE usuarios SET email_verificado = TRUE
     WHERE rol IN (1,2,3) AND email_verificado = FALSE;
-UPDATE usuarios SET email = 'juan@cliente.com', email_verificado = TRUE
-    WHERE cedula = '3001' AND email IS NULL;
 
--- Correos para el staff demo (ahora todos inician sesión por correo).
-UPDATE usuarios SET email = 'carlos@barberia.com', email_verificado = TRUE
-    WHERE cedula = '2001' AND (email IS NULL OR email = '');
-UPDATE usuarios SET email = 'andres@barberia.com', email_verificado = TRUE
-    WHERE cedula = '2002' AND (email IS NULL OR email = '');
 
 -- El dueño también puede atender como profesional. 'atiende' marca a quienes son reservables.
 ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS atiende BOOLEAN NOT NULL DEFAULT FALSE;

@@ -1,94 +1,142 @@
 @model SuperAdminDashboardVm
 @{
     ViewData["Title"] = "Panel SaaS";
+    var empresasSuspendidas = Model.Empresas.Count(e => !e.Activo);
+    var porVencer = Model.Empresas.Count(e => e.SuscripcionVencimiento.HasValue
+        && e.SuscripcionVencimiento.Value.Date >= DateTime.Today
+        && e.SuscripcionVencimiento.Value.Date <= DateTime.Today.AddDays(7));
+    var vencidas = Model.Empresas.Count(e => e.SuscripcionVencimiento.HasValue
+        && e.SuscripcionVencimiento.Value.Date < DateTime.Today);
 }
 
-<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+<section class="saas-dashboard-hero">
     <div>
-        <span class="chip mb-2"><i class="bi bi-shield-lock"></i> Dueno del software</span>
-        <h1 class="section-title mb-1">Resumen SaaS multiempresa</h1>
-        <p class="page-sub mb-0">Control comercial, uso y ventas consolidadas de todas las empresas.</p>
+        <span class="saas-kicker"><i class="bi bi-command"></i> Centro de control SaaS</span>
+        <h1>Operacion multiempresa</h1>
+        <p>Gestiona negocios, usuarios, suscripciones, ventas y estado operativo desde un solo lugar.</p>
     </div>
-    <div class="d-flex gap-2">
-        <a class="btn btn-outline-primary" asp-action="ConfiguracionCorreo"><i class="bi bi-envelope-check me-1"></i>Correo</a>
-        <a class="btn btn-outline-danger" asp-action="LimpiarProduccion"><i class="bi bi-trash3 me-1"></i>Limpiar produccion</a>
-        <a class="btn btn-primary" asp-action="Nuevo"><i class="bi bi-plus-lg me-1"></i>Nuevo negocio</a>
+    <div class="saas-hero-actions">
+        <a class="btn btn-light" asp-action="ConfiguracionCorreo"><i class="bi bi-envelope-check me-1"></i>Correo</a>
+        <a class="btn btn-outline-light" asp-action="LimpiarProduccion"><i class="bi bi-shield-exclamation me-1"></i>Limpiar</a>
+        <a class="btn btn-warning" asp-action="Nuevo"><i class="bi bi-plus-lg me-1"></i>Nuevo negocio</a>
         <form asp-action="Salir" method="post">
             @Html.AntiForgeryToken()
-            <button class="btn btn-outline-danger">Cerrar sesión</button>
+            <button class="btn btn-dark"><i class="bi bi-box-arrow-right me-1"></i>Salir</button>
         </form>
     </div>
-</div>
+</section>
 
-<div class="row g-3 mb-4">
-    <div class="col-md-3"><div class="stat d-flex align-items-center gap-3"><span class="ic tint-green"><i class="bi bi-cash-coin"></i></span><div><div class="lbl">Ventas totales</div><div class="val">$@Model.VentasTotales.ToString("#,##0")</div></div></div></div>
-    <div class="col-md-3"><div class="stat d-flex align-items-center gap-3"><span class="ic tint-blue"><i class="bi bi-buildings"></i></span><div><div class="lbl">Empresas activas</div><div class="val">@Model.EmpresasActivas</div></div></div></div>
-    <div class="col-md-3"><div class="stat d-flex align-items-center gap-3"><span class="ic tint-violet"><i class="bi bi-people"></i></span><div><div class="lbl">Trabajadores</div><div class="val">@Model.UsuariosTotales</div></div></div></div>
-    <div class="col-md-3"><div class="stat d-flex align-items-center gap-3"><span class="ic tint-amber"><i class="bi bi-calendar2-check"></i></span><div><div class="lbl">Turnos</div><div class="val">@Model.TurnosTotales</div></div></div></div>
+<section class="saas-metric-grid">
+    <article class="saas-metric-card primary">
+        <span><i class="bi bi-cash-coin"></i></span>
+        <small>Ventas totales</small>
+        <strong>$@Model.VentasTotales.ToString("#,##0")</strong>
+    </article>
+    <article class="saas-metric-card">
+        <span><i class="bi bi-buildings"></i></span>
+        <small>Empresas activas</small>
+        <strong>@Model.EmpresasActivas</strong>
+    </article>
+    <article class="saas-metric-card">
+        <span><i class="bi bi-people"></i></span>
+        <small>Trabajadores</small>
+        <strong>@Model.UsuariosTotales</strong>
+    </article>
+    <article class="saas-metric-card">
+        <span><i class="bi bi-calendar2-check"></i></span>
+        <small>Turnos</small>
+        <strong>@Model.TurnosTotales</strong>
+    </article>
+</section>
+
+<section class="saas-alert-grid mb-4">
+    <div class="saas-alert-card">
+        <i class="bi bi-exclamation-triangle"></i>
+        <div><strong>@vencidas vencidas</strong><small>Suscripciones con fecha pasada</small></div>
+    </div>
+    <div class="saas-alert-card">
+        <i class="bi bi-clock-history"></i>
+        <div><strong>@porVencer por vencer</strong><small>Proximos 7 dias</small></div>
+    </div>
+    <div class="saas-alert-card">
+        <i class="bi bi-pause-circle"></i>
+        <div><strong>@empresasSuspendidas suspendidas</strong><small>Empresas inactivas</small></div>
+    </div>
+</section>
+
+<div class="section-heading">
+    <div>
+        <h2 class="section-title mb-1">Empresas</h2>
+        <p class="page-sub mb-0">Controla limites, estado, suscripcion y acceso de cada negocio.</p>
+    </div>
 </div>
 
 @if (Model.Empresas.Count == 0)
 {
-    <div class="alert alert-info">No hay negocios registrados.</div>
+    <section class="saas-empty-state">
+        <span><i class="bi bi-buildings"></i></span>
+        <h2>No hay empresas registradas</h2>
+        <p>Crea el primer negocio real. No se sembraran datos demo ni barberias de prueba.</p>
+        <a class="btn btn-primary btn-lg" asp-action="Nuevo"><i class="bi bi-plus-lg me-1"></i>Crear primer negocio</a>
+    </section>
 }
 else
 {
-    <div class="table-card">
-        <table class="table align-middle">
-            <thead>
-                <tr>
-                    <th>Empresa</th>
-                    <th>Ventas</th>
-                    <th>Trabajadores</th>
-                    <th>Clientes</th>
-                    <th>Plan</th>
-                    <th>Estado</th>
-                    <th class="text-end">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var t in Model.Empresas)
-                {
-                    var pct = t.MaxUsuarios == 0 ? 0 : Math.Min(100, (int)Math.Round(t.Trabajadores * 100m / t.MaxUsuarios));
-                    <tr>
-                        <td>
-                            <div class="fw-semibold">@t.Nombre</div>
-                            <a class="small" href="/@t.Slug" target="_blank">/@t.Slug</a>
-                        </td>
-                        <td class="fw-bold">$@t.Ventas.ToString("#,##0")</td>
-                        <td style="min-width:180px">
-                            <div class="d-flex justify-content-between small mb-1">
-                                <span>@t.Trabajadores de @t.MaxUsuarios</span>
-                                <span>@pct%</span>
-                            </div>
-                            <div class="progress progress-thin"><div class="progress-bar" style="width:@pct%"></div></div>
-                            <form asp-action="CambiarLimite" asp-route-id="@t.Id" method="post" class="d-flex gap-2 mt-2">
-                                @Html.AntiForgeryToken()
-                                <input class="form-control form-control-sm" type="number" min="1" name="maxUsuarios" value="@t.MaxUsuarios" aria-label="Limite de trabajadores" />
-                                <button class="btn btn-sm btn-outline-primary" title="Guardar limite"><i class="bi bi-check-lg"></i></button>
-                            </form>
-                        </td>
-                        <td>@t.Clientes</td>
-                        <td><span class="badge bg-secondary">@t.Plan</span></td>
-                        <td>
-                            @if (t.Activo) { <span class="badge bg-success">Activo</span> }
-                            else { <span class="badge bg-secondary">Inactivo</span> }
-                        </td>
-                        <td class="text-end">
-                            <a class="btn btn-sm btn-outline-primary" asp-action="Empresa" asp-route-id="@t.Id">
-                                <i class="bi bi-sliders me-1"></i>Gestionar
-                            </a>
-                            <form asp-action="CambiarEstado" asp-route-id="@t.Id" method="post" class="d-inline">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="activo" value="@((!t.Activo).ToString().ToLower())" />
-                                <button class="btn btn-sm @(t.Activo ? "btn-outline-secondary" : "btn-outline-success")">
-                                    @(t.Activo ? "Desactivar" : "Activar")
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+    <section class="saas-company-grid">
+        @foreach (var t in Model.Empresas)
+        {
+            var pct = t.MaxUsuarios == 0 ? 0 : Math.Min(100, (int)Math.Round(t.Trabajadores * 100m / t.MaxUsuarios));
+            var vence = t.SuscripcionVencimiento?.ToString("dd/MM/yyyy") ?? "Sin vencimiento";
+            var estadoClase = t.Activo ? "success" : "secondary";
+            var inicial = string.IsNullOrWhiteSpace(t.Nombre) ? "?" : t.Nombre.Trim()[0].ToString().ToUpperInvariant();
+            <article class="saas-company-card">
+                <div class="saas-company-head">
+                    <span class="saas-company-logo">@inicial</span>
+                    <div>
+                        <h3>@t.Nombre</h3>
+                        <a href="/@t.Slug" target="_blank" rel="noopener">/@t.Slug <i class="bi bi-box-arrow-up-right"></i></a>
+                    </div>
+                    <span class="badge bg-@estadoClase ms-auto">@(t.Activo ? "Activa" : "Suspendida")</span>
+                </div>
+
+                <div class="saas-company-stats">
+                    <span><small>Ventas</small><strong>$@t.Ventas.ToString("#,##0")</strong></span>
+                    <span><small>Clientes</small><strong>@t.Clientes</strong></span>
+                    <span><small>Turnos</small><strong>@t.Turnos</strong></span>
+                </div>
+
+                <div class="saas-limit-box">
+                    <div class="d-flex justify-content-between small fw-bold">
+                        <span>Trabajadores</span>
+                        <span>@t.Trabajadores / @t.MaxUsuarios</span>
+                    </div>
+                    <div class="progress progress-thin my-2"><div class="progress-bar" style="width:@pct%"></div></div>
+                    <form asp-action="CambiarLimite" asp-route-id="@t.Id" method="post" class="d-flex gap-2">
+                        @Html.AntiForgeryToken()
+                        <input class="form-control form-control-sm" type="number" min="1" name="maxUsuarios" value="@t.MaxUsuarios" aria-label="Limite de trabajadores" />
+                        <button class="btn btn-sm btn-outline-primary" title="Guardar limite"><i class="bi bi-check-lg"></i></button>
+                    </form>
+                </div>
+
+                <div class="saas-company-footer">
+                    <div>
+                        <small>Plan @t.Plan</small>
+                        <strong>Vence: @vence</strong>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a class="btn btn-sm btn-primary" asp-action="Empresa" asp-route-id="@t.Id">
+                            <i class="bi bi-sliders me-1"></i>Gestionar
+                        </a>
+                        <form asp-action="CambiarEstado" asp-route-id="@t.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="activo" value="@((!t.Activo).ToString().ToLower())" />
+                            <button class="btn btn-sm @(t.Activo ? "btn-outline-secondary" : "btn-outline-success")">
+                                @(t.Activo ? "Pausar" : "Activar")
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </article>
+        }
+    </section>
 }

@@ -26,12 +26,6 @@
       "short_name": "Panel",
       "url": "/",
       "description": "Entrar al panel principal"
-    },
-    {
-      "name": "Barberia Centro",
-      "short_name": "Demo",
-      "url": "/barberia-centro",
-      "description": "Abrir la barberia demo"
     }
   ]
 }

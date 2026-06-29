@@ -5399,3 +5399,397 @@ canvas {
         width: 100%;
     }
 }
+
+/* ============================================================
+   SaaS administrator experience
+   ============================================================ */
+.saas-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    min-height: 34px;
+    padding: .42rem .72rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--primary) 15%, var(--card-bg));
+    color: var(--primary-hover);
+    border: 1px solid color-mix(in srgb, var(--primary) 28%, transparent);
+    font-weight: 900;
+    font-size: .82rem;
+}
+
+.saas-login-shell {
+    min-height: calc(100vh - 154px);
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(360px, .92fr);
+    gap: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--card-bg);
+    box-shadow: var(--shadow-card);
+}
+
+.saas-login-hero {
+    min-height: 620px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 1.1rem;
+    padding: clamp(1.4rem, 5vw, 4rem);
+    color: #fff;
+    background:
+        radial-gradient(circle at 18% 18%, rgba(16,185,129,.34), transparent 30%),
+        radial-gradient(circle at 88% 16%, rgba(59,130,246,.25), transparent 30%),
+        linear-gradient(145deg, #0b1120 0%, #111827 52%, #064e3b 120%);
+}
+
+.saas-login-hero h1 {
+    max-width: 760px;
+    margin: 0;
+    color: #fff !important;
+    font-size: clamp(2.8rem, 7vw, 6.3rem);
+    line-height: .9;
+    font-weight: 950;
+}
+
+.saas-login-hero p {
+    max-width: 640px;
+    margin: 0;
+    color: rgba(249,250,251,.78);
+    font-size: clamp(1rem, 2vw, 1.22rem);
+}
+
+.saas-login-proof {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .75rem;
+    max-width: 760px;
+}
+
+.saas-login-proof span {
+    min-height: 96px;
+    display: grid;
+    align-content: center;
+    gap: .14rem;
+    padding: .9rem;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.2);
+    background: rgba(255,255,255,.1);
+    backdrop-filter: blur(12px);
+}
+
+.saas-login-proof i {
+    color: #34d399;
+    font-size: 1.25rem;
+}
+
+.saas-login-proof strong,
+.saas-login-proof small {
+    display: block;
+}
+
+.saas-login-proof small {
+    color: rgba(249,250,251,.7);
+}
+
+.saas-login-panel {
+    display: grid;
+    place-items: center;
+    padding: clamp(1.1rem, 4vw, 3rem);
+    background: var(--bg-main);
+}
+
+.saas-auth-card {
+    width: min(100%, 470px);
+    padding: clamp(1.2rem, 4vw, 2rem);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text-main);
+    box-shadow: var(--shadow-card);
+}
+
+.saas-auth-icon,
+.saas-company-logo,
+.saas-metric-card span,
+.saas-empty-state span {
+    display: grid;
+    place-items: center;
+    background: var(--brand-grad);
+    color: #fff;
+    box-shadow: 0 14px 28px var(--ring);
+}
+
+.saas-auth-icon {
+    flex: 0 0 48px;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+}
+
+.saas-login-note {
+    display: flex;
+    gap: .65rem;
+    margin-top: 1rem;
+    padding: .85rem;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--warning) 12%, var(--card-bg));
+    border: 1px solid color-mix(in srgb, var(--warning) 32%, var(--border));
+    color: var(--text-muted);
+    font-size: .88rem;
+}
+
+.saas-login-note i {
+    color: var(--warning);
+}
+
+.saas-dashboard-hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: clamp(1.2rem, 4vw, 2rem);
+    border-radius: 18px;
+    color: #fff;
+    background:
+        radial-gradient(circle at 80% 10%, rgba(52,211,153,.28), transparent 28%),
+        linear-gradient(135deg, #0b1120, #111827 58%, #064e3b);
+    box-shadow: var(--shadow-card);
+}
+
+.saas-dashboard-hero h1 {
+    margin: .55rem 0 .25rem;
+    color: #fff !important;
+    font-size: clamp(2.3rem, 6vw, 4.6rem);
+    line-height: .92;
+    font-weight: 950;
+}
+
+.saas-dashboard-hero p {
+    max-width: 700px;
+    margin: 0;
+    color: rgba(249,250,251,.76);
+}
+
+.saas-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: .55rem;
+}
+
+.saas-metric-grid,
+.saas-alert-grid,
+.saas-company-grid {
+    display: grid;
+    gap: .9rem;
+}
+
+.saas-metric-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-bottom: .9rem;
+}
+
+.saas-metric-card,
+.saas-alert-card,
+.saas-company-card,
+.saas-empty-state {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--card-bg);
+    color: var(--text-main);
+    box-shadow: var(--shadow-card);
+}
+
+.saas-metric-card {
+    min-height: 154px;
+    display: grid;
+    gap: .45rem;
+    align-content: center;
+    padding: 1rem;
+}
+
+.saas-metric-card.primary {
+    border-color: color-mix(in srgb, var(--primary) 36%, var(--border));
+}
+
+.saas-metric-card span,
+.saas-empty-state span {
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+}
+
+.saas-metric-card small,
+.saas-company-card small,
+.saas-alert-card small {
+    color: var(--text-muted);
+    font-weight: 800;
+}
+
+.saas-metric-card strong {
+    font-size: clamp(1.55rem, 3vw, 2.35rem);
+    line-height: 1;
+}
+
+.saas-alert-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.saas-alert-card {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    min-height: 86px;
+    padding: .9rem;
+}
+
+.saas-alert-card > i {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--warning) 14%, var(--card-bg));
+    color: var(--warning);
+}
+
+.saas-alert-card strong,
+.saas-alert-card small {
+    display: block;
+}
+
+.saas-empty-state {
+    display: grid;
+    justify-items: center;
+    gap: .7rem;
+    padding: clamp(2rem, 6vw, 4rem);
+    text-align: center;
+}
+
+.saas-empty-state span {
+    width: 68px;
+    height: 68px;
+    border-radius: 18px;
+    font-size: 1.7rem;
+}
+
+.saas-empty-state p {
+    max-width: 520px;
+    color: var(--text-muted);
+}
+
+.saas-company-grid {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.saas-company-card {
+    display: grid;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.saas-company-head,
+.saas-company-footer {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+}
+
+.saas-company-logo {
+    flex: 0 0 48px;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    font-weight: 950;
+}
+
+.saas-company-head h3 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+.saas-company-head a {
+    color: var(--primary-hover);
+    font-weight: 800;
+    font-size: .88rem;
+    text-decoration: none;
+}
+
+.saas-company-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .55rem;
+}
+
+.saas-company-stats span,
+.saas-limit-box {
+    padding: .75rem;
+    border-radius: 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+}
+
+.saas-company-stats strong,
+.saas-company-stats small,
+.saas-company-footer small,
+.saas-company-footer strong {
+    display: block;
+}
+
+.saas-company-footer {
+    justify-content: space-between;
+    padding-top: .2rem;
+}
+
+@media (max-width: 991.98px) {
+    .saas-login-shell,
+    .saas-dashboard-hero {
+        grid-template-columns: 1fr;
+    }
+
+    .saas-login-shell {
+        display: block;
+    }
+
+    .saas-login-hero {
+        min-height: 420px;
+    }
+
+    .saas-dashboard-hero {
+        display: grid;
+        align-items: start;
+    }
+
+    .saas-hero-actions {
+        justify-content: flex-start;
+    }
+
+    .saas-metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .saas-alert-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .saas-login-proof,
+    .saas-metric-grid,
+    .saas-company-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .saas-company-footer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .saas-company-footer .btn,
+    .saas-company-footer form,
+    .saas-company-footer button {
+        width: 100%;
+    }
+}

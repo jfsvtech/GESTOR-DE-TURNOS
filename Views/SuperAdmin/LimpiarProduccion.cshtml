@@ -19,6 +19,10 @@
                 <div class="alert alert-danger">
                     Para confirmar escribe exactamente <strong>LIMPIAR PRODUCCION</strong>.
                 </div>
+                <div class="alert alert-warning">
+                    Antes de limpiar, confirma que existen superadmins globales en la base. Si no existen,
+                    configura <strong>SuperAdmin__BootstrapPassword</strong> en Railway y reinicia el servicio.
+                </div>
 
                 <form asp-action="LimpiarProduccion" method="post" class="d-grid gap-3">
                     @Html.AntiForgeryToken()

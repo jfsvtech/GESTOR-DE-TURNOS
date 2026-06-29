@@ -79,6 +79,14 @@ Se conservan:
 
 - Usuarios globales `SuperAdmin`.
 
+Si no existia ningun `SuperAdmin` antes de limpiar, configura `SuperAdmin__BootstrapPassword`
+en Railway y reinicia el servicio. En el siguiente arranque la app recrea automaticamente:
+
+- `jfsvtech@gmail.com`
+- `juliansernavasco@gmail.com`
+
+Ambos entran con la clave definida en `SuperAdmin__BootstrapPassword`.
+
 Requiere escribir exactamente:
 
 ```txt

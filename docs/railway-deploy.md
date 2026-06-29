@@ -67,6 +67,21 @@ Con `SuperAdmin__BootstrapPassword`, el arranque crea/verifica estos superadmins
 
 Ambos quedan con `tenant_id=NULL`, rol `SuperAdmin`, activos y con correo verificado. Despues del primer ingreso, cambia la clave desde la base o implementa flujo de cambio de password antes de entregar accesos a terceros.
 
+Si ejecutaste limpieza y ya no puedes entrar:
+
+1. En Railway, abre el servicio web.
+2. Configura o actualiza:
+   ```text
+   SuperAdmin__BootstrapPassword=UNA_CLAVE_SEGURA_NUEVA
+   ```
+3. Reinicia/redeploya el servicio.
+4. Entra a `https://admin.jfsvtech.com/login`.
+5. Usa cualquiera de estos correos con esa clave:
+   - `jfsvtech@gmail.com`
+   - `juliansernavasco@gmail.com`
+
+El error HTTP 429 en login se limpia al reiniciar el servicio y esta version limita solo el POST de login, no todo el panel SaaS.
+
 ## 5. Email real con Gmail API
 
 Para que la verificacion de correo funcione en produccion, configura Gmail API con OAuth en Railway:

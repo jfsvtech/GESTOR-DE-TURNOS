@@ -13,7 +13,6 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace GeneradorTurnos.Controllers;
 
 [Route("super")]
-[EnableRateLimiting("auth")]
 public class SuperAdminController : Controller
 {
     private readonly ITenantRepository _tenants;
@@ -37,6 +36,7 @@ public class SuperAdminController : Controller
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting("auth")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(LoginEmailVm vm)
     {
@@ -274,7 +274,16 @@ public class SuperAdminController : Controller
             return View(vm);
         }
 
-        var eliminadas = await _tenants.ResetProductionDataAsync(User.Identity?.Name ?? "SuperAdmin");
+        int eliminadas;
+        try
+        {
+            eliminadas = await _tenants.ResetProductionDataAsync(User.Identity?.Name ?? "SuperAdmin");
+        }
+        catch (InvalidOperationException ex)
+        {
+            ModelState.AddModelError(nameof(vm.Confirmacion), ex.Message);
+            return View(vm);
+        }
         TempData["Ok"] = $"Produccion limpiada. Empresas eliminadas: {eliminadas}. Los superadmins globales se conservaron.";
         return RedirectToAction(nameof(Index));
     }

@@ -80,13 +80,16 @@ builder.Services.AddCors(options =>
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    options.AddFixedWindowLimiter("auth", limiter =>
-    {
-        limiter.PermitLimit = 8;
-        limiter.Window = TimeSpan.FromMinutes(5);
-        limiter.QueueLimit = 0;
-        limiter.AutoReplenishment = true;
-    });
+    options.AddPolicy("auth", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            $"{context.Connection.RemoteIpAddress?.ToString() ?? "anon"}:{context.Request.Path}",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 40,
+                Window = TimeSpan.FromMinutes(5),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
     options.AddFixedWindowLimiter("slots", limiter =>
     {
         limiter.PermitLimit = 60;
