@@ -63,7 +63,10 @@
                 </div>
                 <div class="mb-3">
                     <label asp-for="Password" class="form-label"></label>
-                    <input asp-for="Password" type="password" class="form-control" autocomplete="new-password" />
+                    <div class="input-group password-field">
+                        <input asp-for="Password" type="password" class="form-control" autocomplete="new-password" />
+                        <button class="btn btn-outline-secondary" type="button" data-password-toggle aria-label="Mostrar contrasena"><i class="bi bi-eye"></i></button>
+                    </div>
                     <span asp-validation-for="Password" class="text-danger small"></span>
                 </div>
 

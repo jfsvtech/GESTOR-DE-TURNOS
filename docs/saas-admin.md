@@ -45,8 +45,11 @@ Ese formulario crea:
 
 - Tenant/empresa.
 - Usuario dueno dentro de esa empresa.
+- Plan, valor mensual de suscripcion, limite de trabajadores y primer vencimiento.
 - Token de verificacion de correo.
 - Correo de activacion si Gmail API esta configurado.
+
+El valor mensual se guarda en `tenants.valor_suscripcion`. El historial de pagos se registra aparte en `pagos_suscripcion`.
 
 ## Crear usuarios internos
 

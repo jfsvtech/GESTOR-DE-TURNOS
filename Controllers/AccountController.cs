@@ -152,6 +152,62 @@ public class AccountController : TenantBaseController
         return RedirectSegunRol(u.Rol);
     }
 
+    [HttpGet("recuperar")]
+    public IActionResult Recuperar() => View(new ForgotPasswordVm());
+
+    [HttpPost("recuperar")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Recuperar(ForgotPasswordVm vm)
+    {
+        if (!ModelState.IsValid) return View(vm);
+
+        var u = await _usuarios.GetByEmailAsync(TenantId, vm.Email.Trim());
+        if (u is not null && u.Activo)
+        {
+            var token = Guid.NewGuid().ToString("N");
+            await _usuarios.SetTokenAsync(u.Id, token, DateTime.Now.AddHours(2));
+            await EnviarResetAsync(u, token);
+            if (!_email.Enabled)
+                TempData["VerifyLink"] = Url.Action(nameof(Restablecer), "Account",
+                    new { slug = Slug, token }, Request.Scheme);
+        }
+
+        TempData["Ok"] = "Si el correo existe, enviamos un enlace para restablecer la contrasena.";
+        return RedirectToAction(nameof(Login), new { slug = Slug });
+    }
+
+    [HttpGet("restablecer")]
+    public async Task<IActionResult> Restablecer(string token)
+    {
+        var u = await _usuarios.GetByTokenAsync(token);
+        if (u is null || u.TenantId != TenantId)
+        {
+            TempData["Error"] = "El enlace no es valido o expiro.";
+            return RedirectToAction(nameof(Login), new { slug = Slug });
+        }
+
+        return View(new ResetPasswordVm { Token = token });
+    }
+
+    [HttpPost("restablecer")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Restablecer(ResetPasswordVm vm)
+    {
+        if (!ModelState.IsValid) return View(vm);
+
+        var u = await _usuarios.GetByTokenAsync(vm.Token);
+        if (u is null || u.TenantId != TenantId)
+        {
+            ModelState.AddModelError("", "El enlace no es valido o expiro.");
+            return View(vm);
+        }
+
+        await _usuarios.UpdatePasswordAsync(u.Id, BCrypt.Net.BCrypt.HashPassword(vm.Password));
+        await _usuarios.MarcarEmailVerificadoAsync(u.Id);
+        TempData["Ok"] = "Contrasena actualizada. Ya puedes iniciar sesion.";
+        return RedirectToAction(nameof(Login), new { slug = Slug });
+    }
+
     private IActionResult RedirectSegunRol(Rol rol) => rol switch
     {
         Rol.Dueno => RedirectToAction("Index", "Dueno", new { slug = Slug }),
@@ -180,6 +236,16 @@ public class AccountController : TenantBaseController
             <p><a href='{link}' style='background:#6d28d9;color:#fff;padding:10px 18px;border-radius:10px;text-decoration:none'>Verificar mi correo</a></p>
             <p>O copia este enlace: {link}</p>";
         await _email.SendAsync(u.Email!, "Verifica tu correo", html);
+    }
+
+    private async Task EnviarResetAsync(Usuario u, string token)
+    {
+        var link = Url.Action(nameof(Restablecer), "Account", new { slug = Slug, token }, Request.Scheme)!;
+        var html = $@"<p>Hola {u.Nombre},</p>
+            <p>Recibimos una solicitud para restablecer tu contrasena en <strong>{Tenant.Current!.Nombre}</strong>.</p>
+            <p><a href='{link}' style='background:#059669;color:#fff;padding:10px 18px;border-radius:10px;text-decoration:none'>Crear nueva contrasena</a></p>
+            <p>Este enlace vence en 2 horas. Si no fuiste tu, ignora este correo.</p>";
+        await _email.SendAsync(u.Email!, "Restablecer contrasena", html);
     }
 
     private async Task FirmarAsync(Usuario u)

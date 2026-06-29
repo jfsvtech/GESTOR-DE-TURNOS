@@ -1,6 +1,8 @@
 @model SuperAdminDashboardVm
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 @{
     ViewData["Title"] = "Panel SaaS";
+    var baseDomain = (Configuration["App:BaseDomain"] ?? "").Trim().Trim('.');
     var empresasSuspendidas = Model.Empresas.Count(e => !e.Activo);
     var porVencer = Model.Empresas.Count(e => e.SuscripcionVencimiento.HasValue
         && e.SuscripcionVencimiento.Value.Date >= DateTime.Today
@@ -82,33 +84,57 @@
 }
 else
 {
-    <section class="saas-company-grid">
+    <section class="saas-list-panel">
+        <div class="saas-list-toolbar">
+            <div class="input-icon saas-search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" type="search" placeholder="Buscar empresa, slug o plan" data-company-filter />
+            </div>
+            <a class="btn btn-primary" asp-action="Nuevo"><i class="bi bi-plus-lg me-1"></i>Nuevo negocio</a>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 saas-table">
+                <thead>
+                    <tr>
+                        <th>Empresa</th>
+                        <th>Estado</th>
+                        <th>Plan</th>
+                        <th>Suscripcion</th>
+                        <th>Vence</th>
+                        <th>Usuarios</th>
+                        <th>Ventas</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
         @foreach (var t in Model.Empresas)
         {
             var pct = t.MaxUsuarios == 0 ? 0 : Math.Min(100, (int)Math.Round(t.Trabajadores * 100m / t.MaxUsuarios));
             var vence = t.SuscripcionVencimiento?.ToString("dd/MM/yyyy") ?? "Sin vencimiento";
             var estadoClase = t.Activo ? "success" : "secondary";
             var inicial = string.IsNullOrWhiteSpace(t.Nombre) ? "?" : t.Nombre.Trim()[0].ToString().ToUpperInvariant();
-            <article class="saas-company-card">
-                <div class="saas-company-head">
-                    <span class="saas-company-logo">@inicial</span>
-                    <div>
-                        <h3>@t.Nombre</h3>
-                        <a href="/@t.Slug" target="_blank" rel="noopener">/@t.Slug <i class="bi bi-box-arrow-up-right"></i></a>
+            var negocioUrl = string.IsNullOrWhiteSpace(baseDomain) ? $"/{t.Slug}" : $"https://{t.Slug}.{baseDomain}/";
+            <tr data-company-row data-search="@($"{t.Nombre} {t.Slug} {t.Plan} {t.EstadoSuscripcion}".ToLowerInvariant())">
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="saas-company-logo">@inicial</span>
+                        <div>
+                            <div class="fw-bold">@t.Nombre</div>
+                            <a class="small fw-semibold text-decoration-none" href="@negocioUrl" target="_blank" rel="noopener">@negocioUrl</a>
+                        </div>
                     </div>
-                    <span class="badge bg-@estadoClase ms-auto">@(t.Activo ? "Activa" : "Suspendida")</span>
-                </div>
-
-                <div class="saas-company-stats">
-                    <span><small>Ventas</small><strong>$@t.Ventas.ToString("#,##0")</strong></span>
-                    <span><small>Clientes</small><strong>@t.Clientes</strong></span>
-                    <span><small>Turnos</small><strong>@t.Turnos</strong></span>
-                </div>
-
-                <div class="saas-limit-box">
+                </td>
+                <td><span class="badge bg-@estadoClase">@(t.Activo ? "Activa" : "Suspendida")</span></td>
+                <td>
+                    <strong>@t.Plan</strong>
+                    <div class="small text-muted">@t.EstadoSuscripcion</div>
+                </td>
+                <td>$@t.ValorSuscripcion.ToString("#,##0")</td>
+                <td>@vence</td>
+                <td style="min-width:190px">
                     <div class="d-flex justify-content-between small fw-bold">
-                        <span>Trabajadores</span>
-                        <span>@t.Trabajadores / @t.MaxUsuarios</span>
+                        <span>@t.Trabajadores / @t.MaxUsuarios trabajadores</span>
+                        <span>@pct%</span>
                     </div>
                     <div class="progress progress-thin my-2"><div class="progress-bar" style="width:@pct%"></div></div>
                     <form asp-action="CambiarLimite" asp-route-id="@t.Id" method="post" class="d-flex gap-2">
@@ -116,27 +142,24 @@ else
                         <input class="form-control form-control-sm" type="number" min="1" name="maxUsuarios" value="@t.MaxUsuarios" aria-label="Limite de trabajadores" />
                         <button class="btn btn-sm btn-outline-primary" title="Guardar limite"><i class="bi bi-check-lg"></i></button>
                     </form>
-                </div>
-
-                <div class="saas-company-footer">
-                    <div>
-                        <small>Plan @t.Plan</small>
-                        <strong>Vence: @vence</strong>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <a class="btn btn-sm btn-primary" asp-action="Empresa" asp-route-id="@t.Id">
-                            <i class="bi bi-sliders me-1"></i>Gestionar
-                        </a>
+                    <div class="small text-muted mt-1">@t.Clientes clientes</div>
+                </td>
+                <td><strong>$@t.Ventas.ToString("#,##0")</strong><div class="small text-muted">@t.Turnos turnos</div></td>
+                <td class="text-end">
+                    <div class="d-inline-flex gap-2 flex-wrap justify-content-end">
+                        <a class="btn btn-sm btn-primary" asp-action="Empresa" asp-route-id="@t.Id"><i class="bi bi-sliders me-1"></i>Gestionar</a>
+                        <a class="btn btn-sm btn-outline-primary" href="@negocioUrl" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right me-1"></i>Entrar</a>
                         <form asp-action="CambiarEstado" asp-route-id="@t.Id" method="post">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="activo" value="@((!t.Activo).ToString().ToLower())" />
-                            <button class="btn btn-sm @(t.Activo ? "btn-outline-secondary" : "btn-outline-success")">
-                                @(t.Activo ? "Pausar" : "Activar")
-                            </button>
+                            <button class="btn btn-sm @(t.Activo ? "btn-outline-secondary" : "btn-outline-success")">@(t.Activo ? "Pausar" : "Activar")</button>
                         </form>
                     </div>
-                </div>
-            </article>
+                </td>
+            </tr>
         }
+                </tbody>
+            </table>
+        </div>
     </section>
 }

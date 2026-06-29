@@ -33,9 +33,19 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
+    @if (TempData["Ok"] != null)
+    {
+        <div class="alert alert-success text-center mb-0 rounded-0">@TempData["Ok"]</div>
+    }
     @if (TempData["Error"] != null)
     {
         <div class="alert alert-danger text-center mb-0 rounded-0">@TempData["Error"]</div>
+    }
+    @if (TempData["VerifyLink"] != null)
+    {
+        <div class="alert alert-info text-center mb-0 rounded-0">
+            Enlace temporal: <a href="@TempData["VerifyLink"]">@TempData["VerifyLink"]</a>
+        </div>
     }
     @RenderBody()
 

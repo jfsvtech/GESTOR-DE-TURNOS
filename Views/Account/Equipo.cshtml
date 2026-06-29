@@ -35,8 +35,9 @@
                 </div>
                 <div class="mb-4">
                     <label asp-for="Password" class="form-label"></label>
-                    <div class="input-icon"><i class="bi bi-lock"></i>
+                    <div class="input-icon password-field"><i class="bi bi-lock"></i>
                         <input asp-for="Password" class="form-control form-control-lg" />
+                        <button class="password-toggle" type="button" data-password-toggle aria-label="Mostrar contrasena"><i class="bi bi-eye"></i></button>
                     </div>
                     <span asp-validation-for="Password" class="text-danger small"></span>
                 </div>

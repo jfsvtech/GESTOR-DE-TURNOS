@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS tenants (
     nombre          TEXT        NOT NULL,
     slug            TEXT        NOT NULL UNIQUE,
     plan            TEXT        NOT NULL DEFAULT 'Basico',
+    valor_suscripcion NUMERIC(12,2) NOT NULL DEFAULT 0,
     max_usuarios    INT         NOT NULL DEFAULT 10,
     activo          BOOLEAN     NOT NULL DEFAULT TRUE,
     fecha_creacion  TIMESTAMP   NOT NULL DEFAULT now()
@@ -98,6 +99,7 @@ CREATE INDEX IF NOT EXISTS ix_turnos_emp_rango
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS max_usuarios INT NOT NULL DEFAULT 10;
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS suscripcion_inicio DATE NULL;
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS suscripcion_vencimiento DATE NULL;
+ALTER TABLE tenants ADD COLUMN IF NOT EXISTS valor_suscripcion NUMERIC(12,2) NOT NULL DEFAULT 0;
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS estado_suscripcion TEXT NOT NULL DEFAULT 'Activo';
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS recordatorio_pago_dias INT NOT NULL DEFAULT 7;
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NULL;
@@ -315,3 +317,20 @@ BEGIN
             WHERE (estado NOT IN (4,5));
     END IF;
 END $$;
+
+-- Sincroniza secuencias SERIAL tras restauraciones/importaciones.
+-- Evita errores 23505 en *_pkey cuando la secuencia queda por debajo del max(id).
+SELECT setval(pg_get_serial_sequence('tenants', 'id'), COALESCE((SELECT MAX(id) FROM tenants), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('usuarios', 'id'), COALESCE((SELECT MAX(id) FROM usuarios), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('servicios', 'id'), COALESCE((SELECT MAX(id) FROM servicios), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('empleado_servicios', 'id'), COALESCE((SELECT MAX(id) FROM empleado_servicios), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('horarios_trabajo', 'id'), COALESCE((SELECT MAX(id) FROM horarios_trabajo), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('bloqueos', 'id'), COALESCE((SELECT MAX(id) FROM bloqueos), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('turnos', 'id'), COALESCE((SELECT MAX(id) FROM turnos), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('galeria', 'id'), COALESCE((SELECT MAX(id) FROM galeria), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('gastos', 'id'), COALESCE((SELECT MAX(id) FROM gastos), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('notificaciones', 'id'), COALESCE((SELECT MAX(id) FROM notificaciones), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('servicio_solicitudes', 'id'), COALESCE((SELECT MAX(id) FROM servicio_solicitudes), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('email_envios', 'id'), COALESCE((SELECT MAX(id) FROM email_envios), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('pagos_suscripcion', 'id'), COALESCE((SELECT MAX(id) FROM pagos_suscripcion), 0) + 1, false);
+SELECT setval(pg_get_serial_sequence('auditoria', 'id'), COALESCE((SELECT MAX(id) FROM auditoria), 0) + 1, false);

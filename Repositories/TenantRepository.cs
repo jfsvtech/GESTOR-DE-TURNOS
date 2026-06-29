@@ -12,6 +12,7 @@ public interface ITenantRepository
     Task<List<SaasTenantResumen>> GetDashboardAsync();
     Task<bool> SlugExistsAsync(string slug);
     Task<int> CreateAsync(Tenant t);
+    Task DeleteAsync(int id);
     Task SetActivoAsync(int id, bool activo);
     Task UpdateMaxUsuariosAsync(int id, int maxUsuarios);
     Task UpdateSuscripcionAsync(Tenant t);
@@ -58,6 +59,7 @@ public class TenantRepository : ITenantRepository
                 t.nombre,
                 t.slug,
                 t.plan,
+                t.valor_suscripcion,
                 t.max_usuarios,
                 t.activo,
                 t.suscripcion_vencimiento,
@@ -100,8 +102,19 @@ public class TenantRepository : ITenantRepository
     {
         using var c = _db.Create();
         return await c.ExecuteScalarAsync<int>(@"
-            INSERT INTO tenants (nombre, slug, plan, max_usuarios, activo)
-            VALUES (@Nombre, @Slug, @Plan, @MaxUsuarios, @Activo) RETURNING id", t);
+            INSERT INTO tenants
+                (nombre, slug, plan, valor_suscripcion, max_usuarios, activo,
+                 suscripcion_inicio, suscripcion_vencimiento, estado_suscripcion, recordatorio_pago_dias)
+            VALUES
+                (@Nombre, @Slug, @Plan, @ValorSuscripcion, @MaxUsuarios, @Activo,
+                 @SuscripcionInicio, @SuscripcionVencimiento, @EstadoSuscripcion, @RecordatorioPagoDias)
+            RETURNING id", t);
+    }
+
+    public async Task DeleteAsync(int id)
+    {
+        using var c = _db.Create();
+        await c.ExecuteAsync("DELETE FROM tenants WHERE id = @id", new { id });
     }
 
     public async Task SetActivoAsync(int id, bool activo)
@@ -130,6 +143,7 @@ public class TenantRepository : ITenantRepository
         await c.ExecuteAsync(@"
             UPDATE tenants
             SET plan=@Plan,
+                valor_suscripcion=@ValorSuscripcion,
                 suscripcion_inicio=@SuscripcionInicio,
                 suscripcion_vencimiento=@SuscripcionVencimiento,
                 estado_suscripcion=@EstadoSuscripcion,

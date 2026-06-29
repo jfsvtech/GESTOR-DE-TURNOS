@@ -5743,6 +5743,119 @@ canvas {
     padding-top: .2rem;
 }
 
+.saas-list-panel,
+.saas-admin-accordion .accordion-item,
+.inner-panel {
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text-main);
+    border-radius: 16px;
+    box-shadow: var(--shadow-card);
+}
+
+.saas-list-panel {
+    overflow: hidden;
+}
+
+.saas-list-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .75rem;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-secondary);
+}
+
+.saas-search {
+    width: min(420px, 100%);
+}
+
+.saas-table {
+    --bs-table-bg: var(--card-bg);
+    --bs-table-color: var(--text-main);
+    --bs-table-border-color: var(--border);
+    --bs-table-hover-bg: color-mix(in srgb, var(--primary) 7%, var(--card-bg));
+    --bs-table-hover-color: var(--text-main);
+    color: var(--text-main);
+}
+
+.saas-table thead th {
+    color: var(--text-muted);
+    font-size: .78rem;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    background: var(--bg-secondary);
+}
+
+.saas-table td,
+.saas-table th {
+    padding: .95rem;
+}
+
+.saas-admin-accordion {
+    display: grid;
+    gap: .85rem;
+}
+
+.saas-admin-accordion .accordion-item {
+    overflow: hidden;
+}
+
+.saas-admin-accordion .accordion-button {
+    background: var(--bg-secondary);
+    color: var(--text-main);
+    font-weight: 900;
+    box-shadow: none;
+    padding: 1rem 1.15rem;
+}
+
+.saas-admin-accordion .accordion-button:not(.collapsed) {
+    color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 8%, var(--bg-secondary));
+}
+
+.saas-admin-accordion .accordion-body {
+    background: var(--card-bg);
+    color: var(--text-main);
+    padding: 1rem;
+}
+
+.inner-panel {
+    padding: 1rem;
+    background: var(--bg-secondary);
+    box-shadow: none;
+}
+
+.password-field {
+    position: relative;
+}
+
+.input-icon.password-field input {
+    padding-right: 3.25rem;
+}
+
+.password-toggle {
+    position: absolute;
+    right: .4rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 5;
+    width: 2.35rem;
+    height: 2.35rem;
+    border: 0;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    color: var(--text-muted);
+    background: transparent;
+}
+
+.password-toggle:hover {
+    color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
 @media (max-width: 991.98px) {
     .saas-login-shell,
     .saas-dashboard-hero {
@@ -5791,5 +5904,10 @@ canvas {
     .saas-company-footer form,
     .saas-company-footer button {
         width: 100%;
+    }
+
+    .saas-list-toolbar {
+        align-items: stretch;
+        flex-direction: column;
     }
 }

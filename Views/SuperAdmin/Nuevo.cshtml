@@ -33,6 +33,11 @@
                         </select>
                     </div>
                     <div class="col-md-5 mb-3">
+                        <label asp-for="ValorSuscripcion" class="form-label"></label>
+                        <input asp-for="ValorSuscripcion" type="text" inputmode="numeric" class="form-control js-money" />
+                        <span asp-validation-for="ValorSuscripcion" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-5 mb-3">
                         <label asp-for="MaxUsuarios" class="form-label"></label>
                         <input asp-for="MaxUsuarios" class="form-control" type="number" min="1" />
                         <span asp-validation-for="MaxUsuarios" class="text-danger small"></span>
@@ -65,7 +70,10 @@
                     </div>
                     <div class="col-md-6 mb-3">
                         <label asp-for="DuenoPassword" class="form-label"></label>
-                        <input asp-for="DuenoPassword" type="password" class="form-control" />
+                        <div class="input-group password-field">
+                            <input asp-for="DuenoPassword" type="password" class="form-control" autocomplete="new-password" />
+                            <button class="btn btn-outline-secondary" type="button" data-password-toggle aria-label="Mostrar contrasena"><i class="bi bi-eye"></i></button>
+                        </div>
                         <span asp-validation-for="DuenoPassword" class="text-danger small"></span>
                     </div>
                 </div>

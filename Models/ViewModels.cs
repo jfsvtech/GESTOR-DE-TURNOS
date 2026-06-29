@@ -90,6 +90,31 @@ public class LoginEmailVm
     public string? ReturnUrl { get; set; }
 }
 
+public class ForgotPasswordVm
+{
+    [Required(ErrorMessage = "Ingresa tu correo")]
+    [EmailAddress(ErrorMessage = "Correo no valido")]
+    [Display(Name = "Correo electronico")]
+    public string Email { get; set; } = "";
+}
+
+public class ResetPasswordVm
+{
+    [Required]
+    public string Token { get; set; } = "";
+
+    [Required(ErrorMessage = "Crea una contrasena")]
+    [MinLength(6, ErrorMessage = "Minimo 6 caracteres")]
+    [DataType(DataType.Password)]
+    [Display(Name = "Nueva contrasena")]
+    public string Password { get; set; } = "";
+
+    [DataType(DataType.Password)]
+    [Compare(nameof(Password), ErrorMessage = "Las contrasenas no coinciden")]
+    [Display(Name = "Confirmar contrasena")]
+    public string ConfirmPassword { get; set; } = "";
+}
+
 public class IngresarClienteViewModel
 {
     [Required(ErrorMessage = "Ingresa tu cédula")]
@@ -180,6 +205,9 @@ public class TenantFormVm
     public string Slug { get; set; } = "";
     [Display(Name = "Plan")]
     public string Plan { get; set; } = "Basico";
+    [Range(0, 999999999, ErrorMessage = "Valor de suscripcion invalido")]
+    [Display(Name = "Valor mensual de suscripcion")]
+    public decimal ValorSuscripcion { get; set; }
     [Range(1, 10000)]
     [Display(Name = "Trabajadores maximos")]
     public int MaxUsuarios { get; set; } = 10;
@@ -280,6 +308,7 @@ public class SuscripcionFormVm
 {
     public int TenantId { get; set; }
     [Required] public string Plan { get; set; } = "Basico";
+    [Range(0, 999999999)] public decimal ValorSuscripcion { get; set; }
     [Required] public string EstadoSuscripcion { get; set; } = "Activo";
     public DateTime? SuscripcionInicio { get; set; }
     public DateTime? SuscripcionVencimiento { get; set; }

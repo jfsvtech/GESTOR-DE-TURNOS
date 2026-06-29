@@ -93,6 +93,31 @@
     });
   });
 
+  // --- Mostrar / ocultar contraseñas ---
+  document.querySelectorAll("[data-password-toggle]").forEach(button => {
+    button.addEventListener("click", () => {
+      const field = button.closest(".password-field");
+      const input = field?.querySelector("input");
+      if (!input) return;
+      const show = input.type === "password";
+      input.type = show ? "text" : "password";
+      button.setAttribute("aria-label", show ? "Ocultar contrasena" : "Mostrar contrasena");
+      const icon = button.querySelector("i");
+      if (icon) icon.className = show ? "bi bi-eye-slash" : "bi bi-eye";
+    });
+  });
+
+  // --- Filtro liviano para empresas SaaS ---
+  const companyFilter = document.querySelector("[data-company-filter]");
+  if (companyFilter) {
+    companyFilter.addEventListener("input", () => {
+      const value = companyFilter.value.trim().toLowerCase();
+      document.querySelectorAll("[data-company-row]").forEach(row => {
+        row.hidden = value.length > 0 && !row.dataset.search?.includes(value);
+      });
+    });
+  }
+
   // --- Toasts a partir de las alertas ---
   const toastRoot = document.createElement("div");
   toastRoot.className = "toast-stack";

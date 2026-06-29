@@ -19,13 +19,15 @@ public class SuperAdminController : Controller
     private readonly IUsuarioRepository _usuarios;
     private readonly IEmailSender _email;
     private readonly IConfiguration _config;
+    private readonly ILogger<SuperAdminController> _logger;
 
-    public SuperAdminController(ITenantRepository tenants, IUsuarioRepository usuarios, IEmailSender email, IConfiguration config)
+    public SuperAdminController(ITenantRepository tenants, IUsuarioRepository usuarios, IEmailSender email, IConfiguration config, ILogger<SuperAdminController> logger)
     {
         _tenants = tenants;
         _usuarios = usuarios;
         _email = email;
         _config = config;
+        _logger = logger;
     }
 
     [HttpGet("login")]
@@ -66,6 +68,66 @@ public class SuperAdminController : Controller
 
         if (!string.IsNullOrEmpty(vm.ReturnUrl) && Url.IsLocalUrl(vm.ReturnUrl)) return Redirect(vm.ReturnUrl);
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpGet("recuperar")]
+    public IActionResult Recuperar() => View(new ForgotPasswordVm());
+
+    [HttpPost("recuperar")]
+    [EnableRateLimiting("auth")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Recuperar(ForgotPasswordVm vm)
+    {
+        if (!ModelState.IsValid) return View(vm);
+
+        var u = await _usuarios.GetGlobalByEmailAsync(vm.Email.Trim());
+        if (u is not null && u.Rol == Rol.SuperAdmin && u.Activo)
+        {
+            var token = Guid.NewGuid().ToString("N");
+            await _usuarios.SetTokenAsync(u.Id, token, DateTime.Now.AddHours(2));
+            var link = Url.Action(nameof(Restablecer), "SuperAdmin", new { token }, Request.Scheme)!;
+            var html = $@"<p>Hola {u.Nombre},</p>
+                <p>Recibimos una solicitud para restablecer tu contrasena del panel SaaS.</p>
+                <p><a href='{link}'>Crear nueva contrasena</a></p>
+                <p>Este enlace vence en 2 horas.</p>";
+            await _email.SendAsync(u.Email!, "Restablecer contrasena SaaS", html);
+            if (!_email.Enabled) TempData["VerifyLink"] = link;
+        }
+
+        TempData["Ok"] = "Si el correo existe, enviamos un enlace para restablecer la contrasena.";
+        return RedirectToAction(nameof(Login));
+    }
+
+    [HttpGet("restablecer")]
+    public async Task<IActionResult> Restablecer(string token)
+    {
+        var u = await _usuarios.GetByTokenAsync(token);
+        if (u is null || u.TenantId is not null || u.Rol != Rol.SuperAdmin)
+        {
+            TempData["Error"] = "El enlace no es valido o expiro.";
+            return RedirectToAction(nameof(Login));
+        }
+
+        return View(new ResetPasswordVm { Token = token });
+    }
+
+    [HttpPost("restablecer")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Restablecer(ResetPasswordVm vm)
+    {
+        if (!ModelState.IsValid) return View(vm);
+
+        var u = await _usuarios.GetByTokenAsync(vm.Token);
+        if (u is null || u.TenantId is not null || u.Rol != Rol.SuperAdmin)
+        {
+            ModelState.AddModelError("", "El enlace no es valido o expiro.");
+            return View(vm);
+        }
+
+        await _usuarios.UpdatePasswordAsync(u.Id, BCrypt.Net.BCrypt.HashPassword(vm.Password));
+        await _usuarios.MarcarEmailVerificadoAsync(u.Id);
+        TempData["Ok"] = "Contrasena actualizada. Ya puedes iniciar sesion.";
+        return RedirectToAction(nameof(Login));
     }
 
     [HttpPost("salir")]
@@ -147,13 +209,14 @@ public class SuperAdminController : Controller
         if (empresa is null) return NotFound();
 
         empresa.Plan = vm.Plan;
+        empresa.ValorSuscripcion = vm.ValorSuscripcion;
         empresa.EstadoSuscripcion = vm.EstadoSuscripcion;
         empresa.SuscripcionInicio = vm.SuscripcionInicio;
         empresa.SuscripcionVencimiento = vm.SuscripcionVencimiento;
         empresa.RecordatorioPagoDias = vm.RecordatorioPagoDias;
         await _tenants.UpdateSuscripcionAsync(empresa);
         await Auditar(id, "Actualizar suscripcion", "Tenant", id,
-            $"Plan {vm.Plan}, estado {vm.EstadoSuscripcion}, vence {vm.SuscripcionVencimiento:yyyy-MM-dd}");
+            $"Plan {vm.Plan}, valor ${vm.ValorSuscripcion:#,##0}, estado {vm.EstadoSuscripcion}, vence {vm.SuscripcionVencimiento:yyyy-MM-dd}");
         TempData["Ok"] = "Suscripcion actualizada.";
         return RedirectToAction(nameof(Empresa), new { id });
     }
@@ -200,35 +263,43 @@ public class SuperAdminController : Controller
             return RedirectToAction(nameof(Empresa), new { id });
         }
 
-        var empresa = await _tenants.GetByIdAsync(id);
-        if (empresa is null) return NotFound();
-        var token = Guid.NewGuid().ToString("N");
-        var userId = await _usuarios.CreateAsync(new Usuario
+        try
         {
-            TenantId = id,
-            Rol = vm.Rol,
-            Nombre = vm.Nombre.Trim(),
-            Cedula = string.IsNullOrWhiteSpace(vm.Cedula) ? null : vm.Cedula.Trim(),
-            Email = vm.Email.Trim(),
-            Telefono = vm.Telefono.Trim(),
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(vm.Password),
-            Activo = vm.Activo,
-            Atiende = vm.Rol == Rol.Barbero,
-            EmailVerificado = false,
-            TokenVerificacion = token,
-            TokenExpira = DateTime.Now.AddDays(7)
-        });
-        var link = Url.Action("Verificar", "Account", new { slug = empresa.Slug, token }, Request.Scheme)!;
-        var html = $@"<p>Hola {vm.Nombre.Trim()},</p>
-            <p>Te crearon una cuenta en <strong>{empresa.Nombre}</strong>.</p>
-            <p>Para activar el acceso debes verificar tu correo:</p>
-            <p><a href='{link}'>Verificar mi correo</a></p>";
-        await _email.SendAsync(vm.Email.Trim(), "Verifica tu cuenta", html);
+            var empresa = await _tenants.GetByIdAsync(id);
+            if (empresa is null) return NotFound();
+            var token = Guid.NewGuid().ToString("N");
+            var userId = await _usuarios.CreateAsync(new Usuario
+            {
+                TenantId = id,
+                Rol = vm.Rol,
+                Nombre = vm.Nombre.Trim(),
+                Cedula = string.IsNullOrWhiteSpace(vm.Cedula) ? null : vm.Cedula.Trim(),
+                Email = vm.Email.Trim(),
+                Telefono = vm.Telefono.Trim(),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(vm.Password),
+                Activo = vm.Activo,
+                Atiende = vm.Rol == Rol.Barbero,
+                EmailVerificado = false,
+                TokenVerificacion = token,
+                TokenExpira = DateTime.Now.AddDays(7)
+            });
+            var link = TenantUrl(empresa.Slug, $"/cuenta/verificar?token={Uri.EscapeDataString(token)}");
+            var html = $@"<p>Hola {vm.Nombre.Trim()},</p>
+                <p>Te crearon una cuenta en <strong>{empresa.Nombre}</strong>.</p>
+                <p>Para activar el acceso debes verificar tu correo:</p>
+                <p><a href='{link}'>Verificar mi correo</a></p>";
+            await _email.SendAsync(vm.Email.Trim(), "Verifica tu cuenta", html);
 
-        await Auditar(id, "Crear usuario", "Usuario", userId, $"{vm.Nombre} ({vm.Rol})");
-        TempData["Ok"] = _email.Enabled
-            ? "Usuario creado. Enviamos el correo de verificacion."
-            : $"Usuario creado. SMTP esta desactivado; enlace de verificacion: {link}";
+            await Auditar(id, "Crear usuario", "Usuario", userId, $"{vm.Nombre} ({vm.Rol})");
+            TempData["Ok"] = _email.Enabled
+                ? "Usuario creado. Enviamos el correo de verificacion."
+                : $"Usuario creado. SMTP esta desactivado; enlace de verificacion: {link}";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creando usuario interno para tenant {TenantId}", id);
+            TempData["Error"] = "No se pudo crear el usuario. Verifica que el correo no exista y que la base este sincronizada.";
+        }
         return RedirectToAction(nameof(Empresa), new { id });
     }
 
@@ -301,9 +372,17 @@ public class SuperAdminController : Controller
 
         if (!ModelState.IsValid) return View(vm);
 
-        var tenantId = await _tenants.CreateAsync(new Tenant
+        int? tenantId = null;
+        try
         {
-            Nombre = vm.Nombre.Trim(), Slug = slug, Plan = vm.Plan, MaxUsuarios = vm.MaxUsuarios, Activo = true
+        tenantId = await _tenants.CreateAsync(new Tenant
+        {
+            Nombre = vm.Nombre.Trim(), Slug = slug, Plan = vm.Plan,
+            ValorSuscripcion = vm.ValorSuscripcion,
+            SuscripcionInicio = DateTime.Today,
+            SuscripcionVencimiento = DateTime.Today.AddMonths(1),
+            EstadoSuscripcion = "Activo",
+            MaxUsuarios = vm.MaxUsuarios, Activo = true
         });
 
         var token = Guid.NewGuid().ToString("N");
@@ -315,7 +394,7 @@ public class SuperAdminController : Controller
             EmailVerificado = false, TokenVerificacion = token, TokenExpira = DateTime.Now.AddDays(7)
         });
 
-        var link = Url.Action("Verificar", "Account", new { slug, token }, Request.Scheme)!;
+        var link = TenantUrl(slug, $"/cuenta/verificar?token={Uri.EscapeDataString(token)}");
         var html = $"<p>Hola {vm.DuenoNombre},</p><p>Tu negocio <strong>{vm.Nombre}</strong> fue creado. " +
                    $"Verifica tu correo para ingresar:</p><p><a href='{link}'>Verificar mi correo</a></p>";
         await _email.SendAsync(vm.DuenoEmail.Trim(), "Verifica tu cuenta", html);
@@ -324,6 +403,18 @@ public class SuperAdminController : Controller
             ? $"Negocio '{vm.Nombre}' creado. Enviamos verificación a {vm.DuenoEmail}."
             : $"Negocio '{vm.Nombre}' creado. Enlace de verificación del dueño: {link}";
         return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creando negocio {Slug}", slug);
+            if (tenantId.HasValue)
+            {
+                await _tenants.DeleteAsync(tenantId.Value);
+            }
+
+            ModelState.AddModelError("", "No se pudo crear el negocio completo. Revisa correo del dueno, slug y secuencias de la base.");
+            return View(vm);
+        }
     }
 
     [Authorize(Roles = "SuperAdmin")]
@@ -376,5 +467,17 @@ public class SuperAdminController : Controller
         if (string.IsNullOrWhiteSpace(value)) return "No configurado";
         if (value.Length <= 8) return "********";
         return $"{value[..4]}...{value[^4..]}";
+    }
+
+    private string TenantUrl(string slug, string path = "/")
+    {
+        path = string.IsNullOrWhiteSpace(path) ? "/" : path;
+        if (!path.StartsWith('/')) path = "/" + path;
+
+        var baseDomain = (_config["App:BaseDomain"] ?? "").Trim().Trim('.');
+        if (!string.IsNullOrWhiteSpace(baseDomain))
+            return $"https://{slug}.{baseDomain}{path}";
+
+        return $"{Request.Scheme}://{Request.Host}/{slug}{path}";
     }
 }
