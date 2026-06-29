@@ -1,6 +1,8 @@
 @model List<Tenant>
+@inject IConfiguration Configuration
 @{
     ViewData["Title"] = "Inicio";
+    var baseDomain = (Configuration["App:BaseDomain"] ?? "").Trim().Trim('.');
     string Ini(string n) => string.Concat(n.Trim().Split(' ').Take(2).Select(p => p[0])).ToUpper();
 }
 
@@ -27,8 +29,11 @@ else
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
         @foreach (var t in Model)
         {
+            var negocioUrl = string.IsNullOrWhiteSpace(baseDomain)
+                ? Url.Action("Index", "Booking", new { slug = t.Slug })
+                : $"https://{t.Slug}.{baseDomain}";
             <div class="col">
-                <a class="text-decoration-none" asp-controller="Booking" asp-action="Index" asp-route-slug="@t.Slug">
+                <a class="text-decoration-none" href="@negocioUrl">
                     <div class="card hover-lift h-100">
                         <div class="card-body d-flex align-items-center gap-3">
                             <span class="avatar">@Ini(t.Nombre)</span>

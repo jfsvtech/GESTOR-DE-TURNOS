@@ -31,7 +31,7 @@ public class TenantRepository : ITenantRepository
     {
         using var c = _db.Create();
         return await c.QuerySingleOrDefaultAsync<Tenant>(
-            "SELECT * FROM tenants WHERE slug = @slug", new { slug });
+            "SELECT * FROM tenants WHERE lower(slug) = lower(@slug) LIMIT 1", new { slug });
     }
 
     public async Task<Tenant?> GetByIdAsync(int id)

@@ -53,6 +53,8 @@ Security__RequireHttpsCookies=true
 Security__EnableSecurityHeaders=true
 Storage__Provider=Local
 Storage__MaxImageMb=5
+App__BaseDomain=jfsvtech.com
+AllowedHosts=*
 ```
 
 Railway provee `PORT`; el Dockerfile lo usa automaticamente.
@@ -80,6 +82,12 @@ El SuperAdmin puede revisar el estado en `/super/configuracion/correo`; los secr
 2. Genera dominio Railway o conecta dominio propio.
 3. Railway entrega HTTPS automaticamente.
 4. Si usas dominio propio, agrega el CNAME que Railway indique.
+5. Para negocios por subdominio, configura tambien el wildcard `*.jfsvtech.com` en DNS y Railway.
+6. Con `App__BaseDomain=jfsvtech.com`, la app resuelve automaticamente:
+   - `https://nenebarber.jfsvtech.com`
+   - `https://q2.jfsvtech.com`
+
+Ver mas detalles en `docs/subdomain-tenancy.md`.
 
 ## 7. Storage de imagenes
 
@@ -116,6 +124,8 @@ La base de datos debe guardar solo la URL publica/segura de la imagen.
 - [ ] Gmail API real configurado.
 - [ ] `App__SeedDemoData=false`.
 - [ ] Dominio HTTPS activo.
+- [ ] `App__BaseDomain=jfsvtech.com` configurado.
+- [ ] Wildcard `*.jfsvtech.com` activo en DNS/Railway.
 - [ ] Usuarios nuevos no pueden entrar sin verificar correo.
 - [ ] `Data/schema.sql` aplicado.
 - [ ] Revisar si `ex_turnos_no_solape_activos` fue creado.

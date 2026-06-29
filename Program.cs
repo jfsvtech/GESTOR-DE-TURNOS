@@ -5,6 +5,7 @@ using GeneradorTurnos.Services;
 using GeneradorTurnos.Tenancy;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.StaticFiles;
 using System.Threading.RateLimiting;
@@ -46,7 +47,18 @@ builder.Services.AddHostedService<ReminderBackgroundService>();
 
 // ---- Tenant context (por petición) ----
 builder.Services.AddScoped<ITenantContext, TenantContext>();
+builder.Services.AddScoped<ITenantHostResolver, TenantHostResolver>();
 builder.Services.AddScoped<TenantResolutionFilter>();
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor |
+        ForwardedHeaders.XForwardedProto |
+        ForwardedHeaders.XForwardedHost;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // ---- CORS: cerrado por defecto; solo habilita origenes declarados en App:AllowedOrigins ----
 var allowedOrigins = builder.Configuration.GetSection("App:AllowedOrigins").Get<string[]>() ?? [];
@@ -150,6 +162,7 @@ var locOptions = new Microsoft.AspNetCore.Builder.RequestLocalizationOptions()
     .SetDefaultCulture("es-CO")
     .AddSupportedCultures("es-CO")
     .AddSupportedUICultures("es-CO");
+app.UseForwardedHeaders();
 app.UseRequestLocalization(locOptions);
 
 app.UseHttpsRedirection();
@@ -196,6 +209,7 @@ app.UseStaticFiles(new StaticFileOptions
         }
     }
 });
+app.UseMiddleware<TenantMiddleware>();
 app.UseRouting();
 if (allowedOrigins.Length > 0) app.UseCors("ConfiguredOrigins");
 app.UseRateLimiter();
