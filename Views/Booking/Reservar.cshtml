@@ -12,12 +12,12 @@
         <div>
             <span class="booking-kicker"><i class="bi bi-calendar2-check"></i> Reserva online</span>
             <h1>Reserva con @Model.EmpleadoNombre</h1>
-            <p>Elige servicio, fecha y hora. Sin formularios largos, sin pasos innecesarios.</p>
+            <p>Elige servicio, fecha y hora. Rapido, claro y sin salir del flujo.</p>
         </div>
         <a class="btn btn-outline-secondary" asp-action="Index" asp-route-slug="@slug"><i class="bi bi-arrow-left me-1"></i>Servicios</a>
     </div>
 
-    <form asp-action="ConfirmarRapida" asp-route-slug="@slug" method="post" id="clientBookingForm">
+    <form asp-action="Confirmar" asp-route-slug="@slug" method="post" id="clientBookingForm">
         @Html.AntiForgeryToken()
         <input type="hidden" name="empleadoId" value="@Model.EmpleadoId" />
         <input type="hidden" name="servicioId" id="ServicioId" value="@Model.ServicioId" />
@@ -45,7 +45,7 @@
                         <span class="service-edit-icon"><i class="bi bi-scissors"></i></span>
                         <span>
                             <strong>@s.Nombre</strong>
-                            <small>$@s.Precio.ToString("#,##0") · @s.DuracionMinutos min</small>
+                            <small>$@s.Precio.ToString("#,##0") - @s.DuracionMinutos min</small>
                         </span>
                         <i class="bi bi-check2"></i>
                     </button>
@@ -56,10 +56,15 @@
         <section class="booking-step-card" data-step="2">
             <div class="booking-step-title">
                 <h2>Fecha</h2>
-                <p>Elige un dia y cargamos disponibilidad real.</p>
+                <p>Vuelve a hoy o salta rapido a los proximos dias.</p>
             </div>
             <input id="Fecha" type="date" class="form-control booking-date-input" value="@Model.Fecha.ToString("yyyy-MM-dd")"
                    min="@Model.Fecha.ToString("yyyy-MM-dd")" />
+            <div class="booking-date-actions">
+                <button type="button" class="btn btn-sm btn-outline-primary" id="todayBtn"><i class="bi bi-house-door me-1"></i>Hoy</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-day-jump="1">Manana</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-day-jump="2">+2 dias</button>
+            </div>
             <div class="quick-date-strip" id="quickDates"></div>
         </section>
 
@@ -67,6 +72,13 @@
             <div class="booking-step-title">
                 <h2>Hora</h2>
                 <p id="slotHint">Horarios disponibles para el servicio seleccionado.</p>
+            </div>
+            <div id="nextSlotSummary" class="slot-summary"></div>
+            <div class="slot-filter booking-slot-filter" aria-label="Filtrar horarios">
+                <button type="button" class="slot-filter-btn active" data-slot-filter="all">Todos</button>
+                <button type="button" class="slot-filter-btn" data-slot-filter="morning"><i class="bi bi-sunrise"></i> Manana</button>
+                <button type="button" class="slot-filter-btn" data-slot-filter="afternoon"><i class="bi bi-sun"></i> Tarde</button>
+                <button type="button" class="slot-filter-btn" data-slot-filter="night"><i class="bi bi-moon"></i> Noche</button>
             </div>
             <div id="clientSlots" class="booking-slot-grid"><div class="text-muted">Cargando horarios...</div></div>
         </section>
@@ -79,14 +91,11 @@
 
             @if (!esCliente)
             {
-                <div class="guest-fields">
+                <div class="login-required-card">
+                    <i class="bi bi-person-lock"></i>
                     <div>
-                        <label class="form-label">Nombre</label>
-                        <input name="nombre" class="form-control" autocomplete="name" placeholder="Tu nombre" />
-                    </div>
-                    <div>
-                        <label class="form-label">Telefono</label>
-                        <input name="telefono" class="form-control" autocomplete="tel" placeholder="3001234567" />
+                        <strong>Confirma con tu cuenta</strong>
+                        <small>Al confirmar te pediremos iniciar sesion o crear cuenta. Conservaremos este turno seleccionado.</small>
                     </div>
                 </div>
             }
@@ -94,7 +103,7 @@
             <div class="booking-final-bar">
                 <strong id="clientSummary">Selecciona una hora</strong>
                 <button class="btn btn-primary btn-lg" type="submit" id="clientSubmit" disabled>
-                    <i class="bi bi-check2-circle me-1"></i>Confirmar turno
+                    <i class="bi bi-check2-circle me-1"></i>@(esCliente ? "Confirmar turno" : "Continuar y confirmar")
                 </button>
             </div>
         </section>
@@ -110,10 +119,14 @@
         const startInput = document.getElementById('Inicio');
         const dateInput = document.getElementById('Fecha');
         const slots = document.getElementById('clientSlots');
+        const nextSlotSummary = document.getElementById('nextSlotSummary');
         const hint = document.getElementById('slotHint');
         const summary = document.getElementById('clientSummary');
         const submit = document.getElementById('clientSubmit');
+        const todayIso = dateInput.min || dateInput.value;
         let selectedService = null;
+        let allSlots = [];
+        let activeFilter = 'all';
 
         function selectedServiceButton() {
             return document.querySelector(`.booking-service-option[data-service-id="${serviceInput.value}"]`) || document.querySelector('.booking-service-option');
@@ -132,9 +145,9 @@
 
         function buildDates() {
             const wrap = document.getElementById('quickDates');
-            const base = new Date(dateInput.value + 'T00:00:00');
+            const base = new Date(todayIso + 'T00:00:00');
             wrap.innerHTML = '';
-            for (let i = 0; i < 7; i++) {
+            for (let i = 0; i < 10; i++) {
                 const d = new Date(base);
                 d.setDate(base.getDate() + i);
                 const iso = d.toISOString().slice(0, 10);
@@ -147,34 +160,72 @@
             }
         }
 
-        async function loadSlots() {
+        function slotGroup(hora) {
+            const h = Number(hora.split(':')[0]);
+            if (h < 12) return 'morning';
+            if (h < 18) return 'afternoon';
+            return 'night';
+        }
+
+        function chooseSlot(s, btn) {
+            startInput.value = s.inicio;
+            document.querySelectorAll('.booking-slot-btn').forEach(x => x.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            summary.textContent = `${selectedService.name} - ${dateInput.value} - ${s.hora}`;
+            submit.disabled = false;
+            setProgress(4);
+            document.querySelector('[data-step="4"]').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function renderSlots() {
             startInput.value = '';
             submit.disabled = true;
-            hint.textContent = `${selectedService.name} · ${selectedService.duration} min`;
-            slots.innerHTML = '<div class="text-muted">Cargando horarios...</div>';
-            const res = await fetch(`${slotsUrl}?empleadoId=${empleadoId}&servicioId=${selectedService.id}&fecha=${dateInput.value}`);
-            const data = await res.json();
-            if (!data.length) {
+            slots.innerHTML = '';
+            nextSlotSummary.innerHTML = '';
+
+            if (!allSlots.length) {
                 slots.innerHTML = '<div class="slot-empty">No hay horarios disponibles para esta fecha.</div>';
                 return;
             }
-            slots.innerHTML = '';
-            data.forEach(s => {
+
+            const next = allSlots[0];
+            nextSlotSummary.innerHTML = `
+                <button type="button" class="recommended-slot-card compact" id="nextSlotBtn">
+                    <span class="recommended-badge"><i class="bi bi-stars"></i> Proximo disponible</span>
+                    <strong>${next.hora}</strong>
+                    <small>${selectedService.name} - ${selectedService.duration} min</small>
+                </button>`;
+            document.getElementById('nextSlotBtn').onclick = () => {
+                const btn = Array.from(document.querySelectorAll('.booking-slot-btn')).find(x => x.dataset.inicio === next.inicio);
+                chooseSlot(next, btn);
+            };
+
+            const visible = allSlots.filter(s => activeFilter === 'all' || slotGroup(s.hora) === activeFilter);
+            if (!visible.length) {
+                slots.innerHTML = '<div class="slot-empty">No hay horarios en este rango. Prueba otro filtro.</div>';
+                return;
+            }
+
+            visible.forEach(s => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = 'booking-slot-btn';
-                btn.textContent = s.hora;
-                btn.onclick = () => {
-                    startInput.value = s.inicio;
-                    document.querySelectorAll('.booking-slot-btn').forEach(x => x.classList.remove('active'));
-                    btn.classList.add('active');
-                    summary.textContent = `${selectedService.name} · ${dateInput.value} · ${s.hora}`;
-                    submit.disabled = false;
-                    setProgress(4);
-                    document.querySelector('[data-step="4"]').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                };
+                btn.className = 'booking-slot-btn' + (s.inicio === next.inicio ? ' recommended' : '');
+                btn.dataset.inicio = s.inicio;
+                btn.innerHTML = s.inicio === next.inicio ? `<span>${s.hora}</span><small>Mas cercano</small>` : `<span>${s.hora}</span>`;
+                btn.onclick = () => chooseSlot(s, btn);
                 slots.appendChild(btn);
             });
+        }
+
+        async function loadSlots() {
+            startInput.value = '';
+            submit.disabled = true;
+            hint.textContent = `${selectedService.name} - ${selectedService.duration} min`;
+            slots.innerHTML = '<div class="text-muted">Cargando horarios...</div>';
+            nextSlotSummary.innerHTML = '';
+            const res = await fetch(`${slotsUrl}?empleadoId=${empleadoId}&servicioId=${selectedService.id}&fecha=${dateInput.value}`);
+            allSlots = (await res.json()).sort((a, b) => a.hora.localeCompare(b.hora));
+            renderSlots();
             setProgress(3);
         }
 
@@ -186,6 +237,20 @@
         }));
 
         dateInput.addEventListener('change', () => { buildDates(); loadSlots(); });
+        document.getElementById('todayBtn').addEventListener('click', () => { dateInput.value = todayIso; buildDates(); loadSlots(); });
+        document.querySelectorAll('[data-day-jump]').forEach(btn => btn.addEventListener('click', () => {
+            const d = new Date(todayIso + 'T00:00:00');
+            d.setDate(d.getDate() + Number(btn.dataset.dayJump));
+            dateInput.value = d.toISOString().slice(0, 10);
+            buildDates();
+            loadSlots();
+        }));
+        document.querySelectorAll('[data-slot-filter]').forEach(btn => btn.addEventListener('click', () => {
+            activeFilter = btn.dataset.slotFilter;
+            document.querySelectorAll('[data-slot-filter]').forEach(x => x.classList.toggle('active', x === btn));
+            renderSlots();
+        }));
+
         readService(selectedServiceButton());
         buildDates();
         setProgress(2);
