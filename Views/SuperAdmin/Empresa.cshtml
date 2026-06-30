@@ -66,11 +66,11 @@
 <div class="accordion saas-admin-accordion" id="empresaAdmin">
     <div class="accordion-item">
         <h2 class="accordion-header">
-            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#suscripcionPanel">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#suscripcionPanel">
                 <i class="bi bi-credit-card me-2"></i> Suscripción y pagos
             </button>
         </h2>
-        <div id="suscripcionPanel" class="accordion-collapse collapse show" data-bs-parent="#empresaAdmin">
+        <div id="suscripcionPanel" class="accordion-collapse collapse" data-bs-parent="#empresaAdmin">
             <div class="accordion-body">
                 <div class="alert alert-light border d-flex gap-2 align-items-start small">
                     <i class="bi bi-info-circle mt-1"></i>
@@ -139,7 +139,16 @@
         </h2>
         <div id="usuariosPanel" class="accordion-collapse collapse" data-bs-parent="#empresaAdmin">
             <div class="accordion-body">
-                <div class="inner-panel mb-3">
+                <div class="saas-panel-toolbar mb-3">
+                    <div>
+                        <h3 class="h6 mb-1">Usuarios de la empresa</h3>
+                        <p class="page-sub small mb-0">Gestiona accesos internos sin mezclar creación y edición.</p>
+                    </div>
+                    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#crearUsuarioModal">
+                        <i class="bi bi-person-plus me-1"></i>Crear usuario
+                    </button>
+                </div>
+                <div class="d-none">
                     <h3 class="h6 mb-3">Crear usuario</h3>
                     <form asp-action="CrearUsuario" asp-route-id="@e.Id" method="post" class="row g-2 align-items-end">
                         @Html.AntiForgeryToken()
@@ -251,16 +260,65 @@
     </div>
 </div>
 
+<div class="modal fade saas-action-modal" id="crearUsuarioModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form asp-action="CrearUsuario" asp-route-id="@e.Id" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <div>
+                        <span class="modal-kicker"><i class="bi bi-plus-circle me-1"></i>Crear</span>
+                        <h5 class="modal-title">Nuevo usuario interno</h5>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6"><label class="form-label">Nombre</label><input name="Nombre" class="form-control" required /></div>
+                        <div class="col-md-6"><label class="form-label">Cedula</label><input name="Cedula" class="form-control" /></div>
+                        <div class="col-md-6"><label class="form-label">Email</label><input name="Email" type="email" class="form-control" required /></div>
+                        <div class="col-md-6"><label class="form-label">Telefono</label><input name="Telefono" class="form-control" placeholder="3001234567" required /></div>
+                        <div class="col-md-6"><label class="form-label">Rol</label><select name="Rol" class="form-select"><option value="2">Dueno</option><option value="3">Empleado</option></select></div>
+                        <div class="col-md-6">
+                            <label class="form-label">Estado</label>
+                            <label class="status-switch">
+                                <input type="checkbox" name="Activo" value="true" checked />
+                                <input type="hidden" name="Activo" value="false" />
+                                <span class="status-switch-track"><span class="status-switch-thumb"></span></span>
+                                <span class="status-switch-text"><span class="is-on">Activo</span><span class="is-off">Inactivo</span></span>
+                            </label>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Contrasena</label>
+                            <div class="input-group password-field">
+                                <input name="Password" type="password" class="form-control" autocomplete="new-password" placeholder="Auto si vacio" />
+                                <button class="btn btn-outline-secondary" type="button" data-password-toggle aria-label="Mostrar contrasena"><i class="bi bi-eye"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link" data-bs-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-primary"><i class="bi bi-person-plus me-1"></i>Crear usuario</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @* ---- Modales de edición de usuario (todos los campos) ---- *@
 @foreach (var u in usuariosInternos)
 {
-    <div class="modal fade" id="editModal@(u.Id)" tabindex="-1" aria-hidden="true">
+    <div class="modal fade saas-action-modal" id="editModal@(u.Id)" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <form asp-action="EditarUsuario" asp-route-tenantId="@e.Id" asp-route-userId="@u.Id" method="post">
                     @Html.AntiForgeryToken()
                     <div class="modal-header">
-                        <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Editar @u.Nombre</h5>
+                        <div>
+                            <span class="modal-kicker is-editing"><i class="bi bi-pencil-square me-1"></i>Editando</span>
+                            <h5 class="modal-title">Editar @u.Nombre</h5>
+                        </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                     </div>
                     <div class="modal-body">
@@ -271,13 +329,13 @@
                             <div class="col-md-6"><label class="form-label">Teléfono</label><input name="Telefono" value="@u.Telefono" class="form-control" required /></div>
                             <div class="col-md-6"><label class="form-label">Rol</label><select name="Rol" class="form-select"><option value="2" selected="@(u.Rol == Rol.Dueno)">Dueño</option><option value="3" selected="@(u.Rol == Rol.Barbero)">Empleado</option></select></div>
                             <div class="col-md-6">
-                                <label class="form-label d-block">Estado</label>
-                                <div class="status-segment is-sm" role="group" aria-label="Estado del usuario">
-                                    <input class="btn-check" type="radio" name="Activo" id="editActivoSi@(u.Id)" value="true" @(u.Activo ? "checked" : "") />
-                                    <label class="seg-on" for="editActivoSi@(u.Id)"><i class="bi bi-check-circle"></i> Activo</label>
-                                    <input class="btn-check" type="radio" name="Activo" id="editActivoNo@(u.Id)" value="false" @(!u.Activo ? "checked" : "") />
-                                    <label class="seg-off" for="editActivoNo@(u.Id)"><i class="bi bi-slash-circle"></i> Inactivo</label>
-                                </div>
+                                <label class="form-label">Estado</label>
+                                <label class="status-switch">
+                                    <input type="checkbox" name="Activo" value="true" @(u.Activo ? "checked" : "") />
+                                    <input type="hidden" name="Activo" value="false" />
+                                    <span class="status-switch-track"><span class="status-switch-thumb"></span></span>
+                                    <span class="status-switch-text"><span class="is-on">Activo</span><span class="is-off">Inactivo</span></span>
+                                </label>
                             </div>
                             <div class="col-md-12">
                                 <label class="form-label">Nueva contraseña <span class="text-muted small">(dejar vacío para no cambiar)</span></label>

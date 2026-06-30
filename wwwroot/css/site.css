@@ -5827,6 +5827,131 @@ canvas {
     box-shadow: none;
 }
 
+.saas-panel-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--bg-secondary);
+}
+
+.modal-kicker {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    margin-bottom: .25rem;
+    padding: .25rem .55rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--primary) 12%, transparent);
+    color: var(--primary);
+    font-size: .75rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+}
+
+.modal-kicker.is-editing {
+    background: color-mix(in srgb, var(--warning) 16%, transparent);
+    color: var(--warning);
+}
+
+.saas-action-modal .modal-content {
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: var(--card-bg);
+    color: var(--text-main);
+    box-shadow: 0 28px 70px rgba(15, 23, 42, .22);
+}
+
+.saas-action-modal.fade .modal-dialog {
+    transform: translateY(14px) scale(.985);
+    transition: transform .18s ease-out;
+}
+
+.saas-action-modal.show .modal-dialog {
+    transform: none;
+}
+
+.status-switch {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    gap: .65rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.status-switch input[type="checkbox"],
+.status-switch input[type="hidden"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.status-switch-track {
+    width: 46px;
+    height: 26px;
+    border-radius: 999px;
+    position: relative;
+    flex: 0 0 auto;
+    background: color-mix(in srgb, var(--text-muted) 35%, var(--bg-secondary));
+    border: 1px solid color-mix(in srgb, var(--text-muted) 24%, var(--border));
+    transition: background .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.status-switch-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, .28);
+    transition: transform .18s cubic-bezier(.2, .8, .2, 1);
+}
+
+.status-switch-text {
+    min-width: 68px;
+    color: var(--text-muted);
+    font-weight: 850;
+    line-height: 1;
+}
+
+.status-switch .is-on {
+    display: none;
+}
+
+.status-switch:has(input[type="checkbox"]:checked) .status-switch-track {
+    border-color: color-mix(in srgb, var(--success) 65%, var(--border));
+    background: var(--success);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--success) 14%, transparent);
+}
+
+.status-switch:has(input[type="checkbox"]:checked) .status-switch-thumb {
+    transform: translateX(20px);
+}
+
+.status-switch:has(input[type="checkbox"]:checked) .status-switch-text {
+    color: var(--success);
+}
+
+.status-switch:has(input[type="checkbox"]:checked) .is-on {
+    display: inline;
+}
+
+.status-switch:has(input[type="checkbox"]:checked) .is-off {
+    display: none;
+}
+
+.status-switch:has(input[type="checkbox"]:focus-visible) .status-switch-track {
+    outline: 3px solid color-mix(in srgb, var(--primary) 32%, transparent);
+    outline-offset: 3px;
+}
+
 .password-field {
     position: relative;
 }
@@ -6175,5 +6300,19 @@ canvas {
     .saas-list-toolbar {
         align-items: stretch;
         flex-direction: column;
+    }
+
+    .saas-panel-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .saas-panel-toolbar .btn {
+        width: 100%;
+    }
+
+    .status-switch {
+        width: 100%;
+        justify-content: space-between;
     }
 }
