@@ -26,6 +26,7 @@ public interface IUsuarioRepository
     Task SetFotoAsync(int id, string fotoUrl);
     Task<List<Usuario>> GetByTenantAsync(int tenantId);
     Task SetRolActivoAsync(int tenantId, int id, Rol rol, bool activo);
+    Task SetActivoAsync(int tenantId, int id, bool activo);
     Task UpdateInternalAsync(Usuario u);
     Task DeleteAsync(int tenantId, int id);
     Task<List<Usuario>> GetByRolAsync(int tenantId, Rol rol, bool soloActivos = true);
@@ -189,6 +190,14 @@ public class UsuarioRepository : IUsuarioRepository
         await c.ExecuteAsync(
             "UPDATE usuarios SET rol=@rol, activo=@activo WHERE tenant_id=@tenantId AND id=@id",
             new { tenantId, id, rol = (int)rol, activo });
+    }
+
+    public async Task SetActivoAsync(int tenantId, int id, bool activo)
+    {
+        using var c = _db.Create();
+        await c.ExecuteAsync(
+            "UPDATE usuarios SET activo=@activo WHERE tenant_id=@tenantId AND id=@id",
+            new { tenantId, id, activo });
     }
 
     public async Task UpdateInternalAsync(Usuario u)

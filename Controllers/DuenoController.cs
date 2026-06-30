@@ -273,6 +273,18 @@ public class DuenoController : TenantBaseController
         return RedirectToAction(nameof(Servicios), new { slug = Slug });
     }
 
+    [HttpPost("servicios/{id:int}/activo")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ServicioToggleActivo(int id, bool activo)
+    {
+        if (GuardTenant() is { } r) return r;
+        var s = await _servicios.GetByIdAsync(TenantId, id);
+        if (s is null) return NotFound();
+        await _servicios.SetActivoAsync(TenantId, id, activo);
+        TempData["Ok"] = activo ? $"Servicio \"{s.Nombre}\" activado." : $"Servicio \"{s.Nombre}\" inactivado.";
+        return RedirectToAction(nameof(Servicios), new { slug = Slug });
+    }
+
     [HttpGet("servicios/nuevo")]
     public IActionResult ServicioNuevo()
     {
@@ -324,6 +336,18 @@ public class DuenoController : TenantBaseController
         var yo = await _usuarios.GetByIdInTenantAsync(TenantId, CurrentUserId);
         ViewBag.YoAtiendo = yo?.Atiende ?? false;
         return View(await _usuarios.GetByRolAsync(TenantId, Rol.Barbero, soloActivos: false));
+    }
+
+    [HttpPost("profesionales/{id:int}/activo")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ProfesionalToggleActivo(int id, bool activo)
+    {
+        if (GuardTenant() is { } r) return r;
+        var u = await _usuarios.GetByIdInTenantAsync(TenantId, id);
+        if (u is null || u.Rol != Rol.Barbero) return NotFound();
+        await _usuarios.SetActivoAsync(TenantId, id, activo);
+        TempData["Ok"] = activo ? $"{u.Nombre} activado." : $"{u.Nombre} inactivado.";
+        return RedirectToAction(nameof(Profesionales), new { slug = Slug });
     }
 
     [HttpGet("profesionales/nuevo")]

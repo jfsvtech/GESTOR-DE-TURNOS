@@ -7,6 +7,19 @@
     var baseDomain = (Configuration["App:BaseDomain"] ?? "").Trim().Trim('.');
     var negocioUrl = string.IsNullOrWhiteSpace(baseDomain) ? $"/{e.Slug}" : $"https://{e.Slug}.{baseDomain}/";
     var usuariosInternos = Model.Usuarios.Where(x => x.Rol != Rol.Cliente).ToList();
+    var dueno = usuariosInternos.FirstOrDefault(x => x.Rol == Rol.Dueno);
+
+    int MesesCiclo(string? ciclo) => (ciclo ?? "").Trim().ToLowerInvariant() switch
+    {
+        "trimestral" => 3,
+        "anual" => 12,
+        _ => 1
+    };
+    var meses = MesesCiclo(e.CicloSuscripcion);
+    var valorMensual = meses > 0 ? Math.Round(e.ValorSuscripcion / meses, 0) : e.ValorSuscripcion;
+    var ultimoPago = Model.Pagos.OrderByDescending(p => p.FechaPago).FirstOrDefault();
+    var totalPagado = Model.Pagos.Sum(p => p.Monto);
+    var estadoPago = dias is null ? "sin-fecha" : dias < 0 ? "vencida" : dias <= e.RecordatorioPagoDias ? "por-vencer" : "al-dia";
 }
 
 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
@@ -18,54 +31,86 @@
     <a class="btn btn-outline-primary" href="@negocioUrl" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right me-1"></i>Entrar al negocio</a>
 </div>
 
+@if (dueno is not null)
+{
+    var waDueno = PhoneHelper.WhatsAppUrl(dueno.Telefono);
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body d-flex flex-wrap align-items-center gap-3">
+            <span class="avatar" style="width:46px;height:46px"><i class="bi bi-person-badge"></i></span>
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <strong>@dueno.Nombre</strong>
+                    <span class="badge bg-primary">Dueño / contacto principal</span>
+                    @if (dueno.EmailVerificado) { <span class="badge bg-success">Verificado</span> } else { <span class="badge bg-warning text-dark">Pendiente de verificar</span> }
+                    <span class="badge @(dueno.Activo ? "bg-success" : "bg-secondary")">@(dueno.Activo ? "Activo" : "Inactivo")</span>
+                </div>
+                <div class="small text-muted">
+                    @dueno.Email
+                    @if (waDueno is not null) { <span> · </span><a href="@waDueno" target="_blank" rel="noopener" class="link-success fw-semibold"><i class="bi bi-whatsapp me-1"></i>@dueno.Telefono</a> }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 <div class="row g-3 mb-4">
-    <div class="col-lg-4"><div class="stat"><div class="lbl">Estado empresa</div><div class="val">@(e.Activo ? "Activa" : "Suspendida")</div></div></div>
-    <div class="col-lg-4"><div class="stat"><div class="lbl">Valor contrato</div><div class="val">$@e.ValorSuscripcion.ToString("#,##0")</div><div class="small text-muted">@e.CicloSuscripcion</div></div></div>
-    <div class="col-lg-4"><div class="stat"><div class="lbl">Alerta pago</div><div class="val">@(dias is null ? "Sin fecha" : dias < 0 ? "Vencida" : $"{dias} dias")</div></div></div>
+    <div class="col-lg-3 col-6"><div class="stat"><div class="lbl">Estado empresa</div><div class="val">@(e.Activo ? "Activa" : "Suspendida")</div></div></div>
+    <div class="col-lg-3 col-6"><div class="stat"><div class="lbl">Valor del ciclo</div><div class="val">$@e.ValorSuscripcion.ToString("#,##0")</div><div class="small text-muted">@e.CicloSuscripcion (~$@valorMensual.ToString("#,##0")/mes)</div></div></div>
+    <div class="col-lg-3 col-6"><div class="stat"><div class="lbl">Próximo vencimiento</div><div class="val">@(e.SuscripcionVencimiento?.ToString("dd/MM/yyyy") ?? "Sin fecha")</div><div class="small @(estadoPago == "vencida" ? "text-danger" : estadoPago == "por-vencer" ? "text-warning" : "text-muted")">@(dias is null ? "" : dias < 0 ? $"Vencida hace {-dias} días" : $"Faltan {dias} días")</div></div></div>
+    <div class="col-lg-3 col-6"><div class="stat"><div class="lbl">Total pagado</div><div class="val">$@totalPagado.ToString("#,##0")</div><div class="small text-muted">@Model.Pagos.Count pago(s)</div></div></div>
 </div>
 
 <div class="accordion saas-admin-accordion" id="empresaAdmin">
     <div class="accordion-item">
         <h2 class="accordion-header">
             <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#suscripcionPanel">
-                <i class="bi bi-credit-card me-2"></i> Suscripcion y pagos
+                <i class="bi bi-credit-card me-2"></i> Suscripción y pagos
             </button>
         </h2>
         <div id="suscripcionPanel" class="accordion-collapse collapse show" data-bs-parent="#empresaAdmin">
             <div class="accordion-body">
+                <div class="alert alert-light border d-flex gap-2 align-items-start small">
+                    <i class="bi bi-info-circle mt-1"></i>
+                    <div>El <strong>contrato</strong> define el ciclo (mensual, trimestral o anual) y su valor total. Los <strong>pagos</strong> se registran cuando el cliente paga, normalmente <strong>mes a mes</strong>, aunque el contrato sea más largo.</div>
+                </div>
                 <div class="row g-3">
-                    <div class="col-lg-5">
-                        <div class="inner-panel">
-                            <h3 class="h6 mb-1">Configurar suscripcion</h3>
-                            <p class="page-sub small mb-3">Define el ciclo contratado. Los pagos se registran por periodo, normalmente mensual.</p>
-                            <form asp-action="GuardarSuscripcion" asp-route-id="@e.Id" method="post" class="row g-2">
+                    <div class="col-lg-6">
+                        <div class="inner-panel h-100">
+                            <h3 class="h6 mb-1"><i class="bi bi-file-earmark-text me-1"></i>Contrato / ciclo</h3>
+                            <p class="page-sub small mb-3">El vencimiento se recalcula solo según el inicio y el ciclo (puedes ajustarlo manualmente).</p>
+                            <form asp-action="GuardarSuscripcion" asp-route-id="@e.Id" method="post" class="row g-2" id="formSuscripcion">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="TenantId" value="@e.Id" />
                                 <div class="col-md-6"><label class="form-label">Plan</label><select name="Plan" class="form-select"><option selected="@(e.Plan == "Basico")">Basico</option><option selected="@(e.Plan == "Pro")">Pro</option><option selected="@(e.Plan == "Premium")">Premium</option></select></div>
-                                <div class="col-md-6"><label class="form-label">Ciclo</label><select name="CicloSuscripcion" class="form-select"><option selected="@(e.CicloSuscripcion == "Mensual")">Mensual</option><option selected="@(e.CicloSuscripcion == "Trimestral")">Trimestral</option><option selected="@(e.CicloSuscripcion == "Anual")">Anual</option></select></div>
+                                <div class="col-md-6"><label class="form-label">Ciclo</label><select name="CicloSuscripcion" id="cicloSel" class="form-select"><option value="Mensual" selected="@(e.CicloSuscripcion == "Mensual")">Mensual</option><option value="Trimestral" selected="@(e.CicloSuscripcion == "Trimestral")">Trimestral</option><option value="Anual" selected="@(e.CicloSuscripcion == "Anual")">Anual</option></select></div>
+                                <div class="col-md-6"><label class="form-label">Valor del ciclo</label><input type="text" inputmode="numeric" name="ValorSuscripcion" id="valorCiclo" value="@e.ValorSuscripcion.ToString("0", System.Globalization.CultureInfo.InvariantCulture)" class="form-control js-money" /></div>
                                 <div class="col-md-6"><label class="form-label">Estado</label><select name="EstadoSuscripcion" class="form-select"><option selected="@(e.EstadoSuscripcion == "Activo")">Activo</option><option selected="@(e.EstadoSuscripcion == "Suspendido")">Suspendido</option><option selected="@(e.EstadoSuscripcion == "Vencido")">Vencido</option></select></div>
-                                <div class="col-md-6"><label class="form-label">Valor del ciclo</label><input type="text" inputmode="numeric" name="ValorSuscripcion" value="@e.ValorSuscripcion.ToString("0", System.Globalization.CultureInfo.InvariantCulture)" class="form-control js-money" /></div>
-                                <div class="col-md-6"><label class="form-label">Inicio</label><input type="date" name="SuscripcionInicio" value="@e.SuscripcionInicio?.ToString("yyyy-MM-dd")" class="form-control" /></div>
-                                <div class="col-md-6"><label class="form-label">Vencimiento</label><input type="date" name="SuscripcionVencimiento" value="@e.SuscripcionVencimiento?.ToString("yyyy-MM-dd")" class="form-control" /></div>
-                                <div class="col-md-6"><label class="form-label">Recordar dias antes</label><input type="number" min="1" max="60" name="RecordatorioPagoDias" value="@e.RecordatorioPagoDias" class="form-control" /></div>
-                                <div class="col-12"><button class="btn btn-primary"><i class="bi bi-check2 me-1"></i>Guardar suscripcion</button></div>
+                                <div class="col-md-6"><label class="form-label">Inicio</label><input type="date" name="SuscripcionInicio" id="inicioSus" value="@e.SuscripcionInicio?.ToString("yyyy-MM-dd")" class="form-control" /></div>
+                                <div class="col-md-6"><label class="form-label">Vencimiento</label><input type="date" name="SuscripcionVencimiento" id="vencSus" value="@e.SuscripcionVencimiento?.ToString("yyyy-MM-dd")" class="form-control" /></div>
+                                <div class="col-md-6"><label class="form-label">Recordar pago (días antes)</label><input type="number" min="1" max="60" name="RecordatorioPagoDias" value="@e.RecordatorioPagoDias" class="form-control" /></div>
+                                <div class="col-12"><button class="btn btn-primary"><i class="bi bi-check2 me-1"></i>Guardar contrato</button></div>
                             </form>
                         </div>
                     </div>
-                    <div class="col-lg-7">
-                        <div class="inner-panel">
-                            <h3 class="h6 mb-1">Registrar pago</h3>
-                            <p class="page-sub small mb-3">Puedes registrar pagos mensuales aunque el contrato sea trimestral o anual.</p>
-                            <form asp-action="RegistrarPago" asp-route-id="@e.Id" method="post" class="row g-2">
+                    <div class="col-lg-6">
+                        <div class="inner-panel h-100">
+                            <h3 class="h6 mb-1"><i class="bi bi-cash-coin me-1"></i>Registrar pago</h3>
+                            <p class="page-sub small mb-2">Valor mensual sugerido: <strong>$<span id="valorMensualTxt">@valorMensual.ToString("#,##0")</span></strong></p>
+                            <button type="button" class="btn btn-sm btn-outline-success mb-3" id="btnPagoMes"><i class="bi bi-calendar-check me-1"></i>Cargar pago de este mes</button>
+                            <form asp-action="RegistrarPago" asp-route-id="@e.Id" method="post" class="row g-2" id="formPago">
                                 @Html.AntiForgeryToken()
-                                <div class="col-md-4"><label class="form-label">Monto</label><input name="Monto" type="text" inputmode="numeric" class="form-control js-money" /></div>
-                                <div class="col-md-4"><label class="form-label">Desde</label><input name="PeriodoInicio" type="date" value="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control" /></div>
-                                <div class="col-md-4"><label class="form-label">Hasta</label><input name="PeriodoFin" type="date" value="@DateTime.Today.AddMonths(1).ToString("yyyy-MM-dd")" class="form-control" /></div>
-                                <div class="col-md-4"><label class="form-label">Metodo</label><input name="Metodo" class="form-control" placeholder="Transferencia" /></div>
-                                <div class="col-md-4"><label class="form-label">Referencia</label><input name="Referencia" class="form-control" /></div>
-                                <div class="col-md-4"><label class="form-label">Nota</label><input name="Nota" class="form-control" /></div>
+                                <div class="col-md-6"><label class="form-label">Monto</label><input name="Monto" id="pagoMonto" type="text" inputmode="numeric" class="form-control js-money" /></div>
+                                <div class="col-md-6"><label class="form-label">Método</label><input name="Metodo" class="form-control" placeholder="Transferencia / Efectivo" /></div>
+                                <div class="col-md-6"><label class="form-label">Periodo desde</label><input name="PeriodoInicio" id="pagoDesde" type="date" value="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control" /></div>
+                                <div class="col-md-6"><label class="form-label">Periodo hasta</label><input name="PeriodoFin" id="pagoHasta" type="date" value="@DateTime.Today.AddMonths(1).ToString("yyyy-MM-dd")" class="form-control" /></div>
+                                <div class="col-md-6"><label class="form-label">Referencia</label><input name="Referencia" class="form-control" /></div>
+                                <div class="col-md-6"><label class="form-label">Nota</label><input name="Nota" class="form-control" /></div>
                                 <div class="col-12"><button class="btn btn-success"><i class="bi bi-plus-circle me-1"></i>Registrar pago</button></div>
                             </form>
+                            @if (ultimoPago is not null)
+                            {
+                                <p class="small text-muted mb-0 mt-2">Último pago: $@ultimoPago.Monto.ToString("#,##0") el @ultimoPago.FechaPago.ToString("dd/MM/yyyy")</p>
+                            }
                         </div>
                     </div>
                 </div>
@@ -85,64 +130,56 @@
                     <h3 class="h6 mb-3">Crear usuario</h3>
                     <form asp-action="CrearUsuario" asp-route-id="@e.Id" method="post" class="row g-2 align-items-end">
                         @Html.AntiForgeryToken()
-                        <div class="col-md-2"><label class="form-label">Nombre</label><input name="Nombre" class="form-control" /></div>
-                        <div class="col-md-2"><label class="form-label">Cedula</label><input name="Cedula" class="form-control" /></div>
+                        <div class="col-md-3"><label class="form-label">Nombre</label><input name="Nombre" class="form-control" /></div>
+                        <div class="col-md-2"><label class="form-label">Cédula</label><input name="Cedula" class="form-control" /></div>
                         <div class="col-md-3"><label class="form-label">Email</label><input name="Email" type="email" class="form-control" /></div>
-                        <div class="col-md-2"><label class="form-label">Telefono</label><input name="Telefono" class="form-control" placeholder="3001234567" /></div>
-                        <div class="col-md-2"><label class="form-label">Rol</label><select name="Rol" class="form-select"><option value="2">Dueno</option><option value="3">Empleado</option></select></div>
-                        <div class="col-md-1"><div class="form-check form-switch"><input name="Activo" value="true" class="form-check-input" type="checkbox" checked /><input name="Activo" type="hidden" value="false" /><label class="form-check-label">Activo</label></div></div>
-                        <div class="col-md-3">
-                            <label class="form-label">Contrasena</label>
+                        <div class="col-md-2"><label class="form-label">Teléfono</label><input name="Telefono" class="form-control" placeholder="3001234567" /></div>
+                        <div class="col-md-2"><label class="form-label">Rol</label><select name="Rol" class="form-select"><option value="2">Dueño</option><option value="3">Empleado</option></select></div>
+                        <div class="col-md-5">
+                            <label class="form-label">Contraseña</label>
                             <div class="input-group password-field">
-                                <input name="Password" type="password" class="form-control" autocomplete="new-password" placeholder="Auto si vacio" />
-                                <button class="btn btn-outline-secondary" type="button" data-password-toggle aria-label="Mostrar contrasena"><i class="bi bi-eye"></i></button>
+                                <input name="Password" type="password" class="form-control" autocomplete="new-password" placeholder="Auto si vacío" />
+                                <button class="btn btn-outline-secondary" type="button" data-password-toggle aria-label="Mostrar contraseña"><i class="bi bi-eye"></i></button>
                             </div>
                         </div>
-                        <div class="col-md-2"><button class="btn btn-primary w-100">Crear usuario</button></div>
+                        <div class="col-md-4">
+                            <label class="form-label d-block">Estado</label>
+                            <div class="status-segment is-sm" role="group" aria-label="Estado del usuario">
+                                <input class="btn-check" type="radio" name="Activo" id="crearActivoSi" value="true" checked />
+                                <label class="seg-on" for="crearActivoSi"><i class="bi bi-check-circle"></i> Activo</label>
+                                <input class="btn-check" type="radio" name="Activo" id="crearActivoNo" value="false" />
+                                <label class="seg-off" for="crearActivoNo"><i class="bi bi-slash-circle"></i> Inactivo</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 ms-auto text-end"><button class="btn btn-primary w-100"><i class="bi bi-person-plus me-1"></i>Crear usuario</button></div>
                     </form>
                 </div>
 
                 <div class="table-responsive">
                     <table class="table align-middle mb-0 saas-table">
-                        <thead><tr><th>Usuario</th><th>Correo</th><th>Telefono</th><th>Rol</th><th>Estado</th><th>Verificacion</th><th class="text-end">Acciones</th></tr></thead>
+                        <thead><tr><th>Usuario</th><th>Correo</th><th>Teléfono</th><th>Rol</th><th>Estado</th><th>Verificación</th><th class="text-end">Acciones</th></tr></thead>
                         <tbody>
                         @foreach (var u in usuariosInternos)
                         {
                             var wa = PhoneHelper.WhatsAppUrl(u.Telefono);
-                            var editId = $"editUser{u.Id}";
                             <tr>
                                 <td class="fw-semibold">@u.Nombre<br /><span class="small text-muted">@u.Cedula</span></td>
                                 <td>@u.Email</td>
                                 <td>@if (wa is not null) { <a href="@wa" target="_blank" rel="noopener" class="link-success fw-semibold"><i class="bi bi-whatsapp me-1"></i>@u.Telefono</a> } else { <span class="text-muted">-</span> }</td>
-                                <td>@(u.Rol == Rol.Dueno ? "Dueno" : "Empleado")</td>
+                                <td>@(u.Rol == Rol.Dueno ? "Dueño" : "Empleado")</td>
                                 <td><span class="badge @(u.Activo ? "bg-success" : "bg-secondary")">@(u.Activo ? "Activo" : "Inactivo")</span></td>
                                 <td>@if (u.EmailVerificado) { <span class="badge bg-success">Verificado</span> } else { <span class="badge bg-warning text-dark">Pendiente</span> }</td>
-                                <td class="text-end">
-                                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#@editId"><i class="bi bi-pencil me-1"></i>Editar</button>
+                                <td class="text-end text-nowrap">
+                                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="modal" data-bs-target="#editModal@(u.Id)"><i class="bi bi-pencil me-1"></i>Editar</button>
                                     <form asp-action="ActualizarUsuario" asp-route-tenantId="@e.Id" asp-route-userId="@u.Id" method="post" class="d-inline">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="rol" value="@((int)u.Rol)" />
                                         <input type="hidden" name="activo" value="@((!u.Activo).ToString().ToLower())" />
                                         <button class="btn btn-sm @(u.Activo ? "btn-outline-secondary" : "btn-outline-success")">@(u.Activo ? "Inactivar" : "Reactivar")</button>
                                     </form>
-                                    <form asp-action="EliminarUsuario" asp-route-tenantId="@e.Id" asp-route-userId="@u.Id" method="post" class="d-inline" onsubmit="return confirm('Eliminar este usuario permanentemente?');">
+                                    <form asp-action="EliminarUsuario" asp-route-tenantId="@e.Id" asp-route-userId="@u.Id" method="post" class="d-inline" onsubmit="return confirm('¿Eliminar este usuario permanentemente?');">
                                         @Html.AntiForgeryToken()
                                         <button class="btn btn-sm btn-outline-danger">Eliminar</button>
-                                    </form>
-                                </td>
-                            </tr>
-                            <tr class="collapse" id="@editId">
-                                <td colspan="7">
-                                    <form asp-action="EditarUsuario" asp-route-tenantId="@e.Id" asp-route-userId="@u.Id" method="post" class="inner-panel row g-2 align-items-end">
-                                        @Html.AntiForgeryToken()
-                                        <div class="col-md-3"><label class="form-label">Nombre</label><input name="Nombre" value="@u.Nombre" class="form-control" /></div>
-                                        <div class="col-md-2"><label class="form-label">Cedula</label><input name="Cedula" value="@u.Cedula" class="form-control" /></div>
-                                        <div class="col-md-3"><label class="form-label">Email</label><input name="Email" value="@u.Email" type="email" class="form-control" /></div>
-                                        <div class="col-md-2"><label class="form-label">Telefono</label><input name="Telefono" value="@u.Telefono" class="form-control" /></div>
-                                        <div class="col-md-2"><label class="form-label">Rol</label><select name="Rol" class="form-select"><option value="2" selected="@(u.Rol == Rol.Dueno)">Dueno</option><option value="3" selected="@(u.Rol == Rol.Barbero)">Empleado</option></select></div>
-                                        <div class="col-md-2"><div class="form-check form-switch"><input name="Activo" value="true" class="form-check-input" type="checkbox" checked="@u.Activo" /><input name="Activo" type="hidden" value="false" /><label class="form-check-label">Activo</label></div></div>
-                                        <div class="col-md-3"><label class="form-label">Nueva contrasena</label><div class="input-group password-field"><input name="Password" type="password" class="form-control" autocomplete="new-password" placeholder="Dejar igual" /><button class="btn btn-outline-secondary" type="button" data-password-toggle aria-label="Mostrar contrasena"><i class="bi bi-eye"></i></button></div></div>
-                                        <div class="col-md-2"><button class="btn btn-primary w-100"><i class="bi bi-check-lg me-1"></i>Guardar</button></div>
                                     </form>
                                 </td>
                             </tr>
@@ -158,17 +195,33 @@
         <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#pagosPanel"><i class="bi bi-receipt me-2"></i> Historial de pagos (@Model.Pagos.Count)</button></h2>
         <div id="pagosPanel" class="accordion-collapse collapse" data-bs-parent="#empresaAdmin">
             <div class="accordion-body">
-                @foreach (var p in Model.Pagos)
-                {
-                    <div class="d-flex justify-content-between border-bottom py-2 small"><span>@p.FechaPago.ToString("dd/MM/yyyy") - @p.PeriodoInicio.ToString("dd/MM") a @p.PeriodoFin.ToString("dd/MM")</span><strong>$@p.Monto.ToString("#,##0")</strong></div>
-                }
                 @if (!Model.Pagos.Any()) { <p class="page-sub">Sin pagos registrados.</p> }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0 saas-table">
+                            <thead><tr><th>Fecha pago</th><th>Periodo</th><th>Método</th><th>Referencia</th><th class="text-end">Monto</th></tr></thead>
+                            <tbody>
+                            @foreach (var p in Model.Pagos.OrderByDescending(x => x.FechaPago))
+                            {
+                                <tr>
+                                    <td>@p.FechaPago.ToString("dd/MM/yyyy")</td>
+                                    <td>@p.PeriodoInicio.ToString("dd/MM/yyyy") a @p.PeriodoFin.ToString("dd/MM/yyyy")</td>
+                                    <td>@(string.IsNullOrWhiteSpace(p.Metodo) ? "-" : p.Metodo)</td>
+                                    <td>@(string.IsNullOrWhiteSpace(p.Referencia) ? "-" : p.Referencia)</td>
+                                    <td class="text-end fw-semibold">$@p.Monto.ToString("#,##0")</td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                }
             </div>
         </div>
     </div>
 
     <div class="accordion-item">
-        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#auditoriaPanel"><i class="bi bi-activity me-2"></i> Auditoria reciente</button></h2>
+        <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#auditoriaPanel"><i class="bi bi-activity me-2"></i> Auditoría reciente</button></h2>
         <div id="auditoriaPanel" class="accordion-collapse collapse" data-bs-parent="#empresaAdmin">
             <div class="accordion-body">
                 @foreach (var a in Model.Auditoria)
@@ -184,3 +237,94 @@
         </div>
     </div>
 </div>
+
+@* ---- Modales de edición de usuario (todos los campos) ---- *@
+@foreach (var u in usuariosInternos)
+{
+    <div class="modal fade" id="editModal@(u.Id)" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <form asp-action="EditarUsuario" asp-route-tenantId="@e.Id" asp-route-userId="@u.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Editar @u.Nombre</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6"><label class="form-label">Nombre</label><input name="Nombre" value="@u.Nombre" class="form-control" required /></div>
+                            <div class="col-md-6"><label class="form-label">Cédula</label><input name="Cedula" value="@u.Cedula" class="form-control" /></div>
+                            <div class="col-md-6"><label class="form-label">Email</label><input name="Email" value="@u.Email" type="email" class="form-control" required /></div>
+                            <div class="col-md-6"><label class="form-label">Teléfono</label><input name="Telefono" value="@u.Telefono" class="form-control" required /></div>
+                            <div class="col-md-6"><label class="form-label">Rol</label><select name="Rol" class="form-select"><option value="2" selected="@(u.Rol == Rol.Dueno)">Dueño</option><option value="3" selected="@(u.Rol == Rol.Barbero)">Empleado</option></select></div>
+                            <div class="col-md-6">
+                                <label class="form-label d-block">Estado</label>
+                                <div class="status-segment is-sm" role="group" aria-label="Estado del usuario">
+                                    <input class="btn-check" type="radio" name="Activo" id="editActivoSi@(u.Id)" value="true" @(u.Activo ? "checked" : "") />
+                                    <label class="seg-on" for="editActivoSi@(u.Id)"><i class="bi bi-check-circle"></i> Activo</label>
+                                    <input class="btn-check" type="radio" name="Activo" id="editActivoNo@(u.Id)" value="false" @(!u.Activo ? "checked" : "") />
+                                    <label class="seg-off" for="editActivoNo@(u.Id)"><i class="bi bi-slash-circle"></i> Inactivo</label>
+                                </div>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Nueva contraseña <span class="text-muted small">(dejar vacío para no cambiar)</span></label>
+                                <div class="input-group password-field">
+                                    <input name="Password" type="password" class="form-control" autocomplete="new-password" placeholder="Sin cambios" />
+                                    <button class="btn btn-outline-secondary" type="button" data-password-toggle aria-label="Mostrar contraseña"><i class="bi bi-eye"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-link" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+    (function () {
+        var meses = { 'Mensual': 1, 'Trimestral': 3, 'Anual': 12 };
+        var ciclo = document.getElementById('cicloSel');
+        var inicio = document.getElementById('inicioSus');
+        var venc = document.getElementById('vencSus');
+        var valorCiclo = document.getElementById('valorCiclo');
+        var valorMensualTxt = document.getElementById('valorMensualTxt');
+
+        function soloDigitos(s) { return (s || '').replace(/\D+/g, ''); }
+        function fmt(n) { return n.toLocaleString('es-CO'); }
+
+        function recalcVenc() {
+            if (!inicio.value || !ciclo.value) return;
+            var d = new Date(inicio.value + 'T00:00:00');
+            d.setMonth(d.getMonth() + (meses[ciclo.value] || 1));
+            venc.value = d.toISOString().slice(0, 10);
+        }
+        function recalcMensual() {
+            var v = parseInt(soloDigitos(valorCiclo.value), 10) || 0;
+            var m = meses[ciclo.value] || 1;
+            if (valorMensualTxt) valorMensualTxt.textContent = fmt(Math.round(v / m));
+        }
+        ciclo && ciclo.addEventListener('change', function () { recalcVenc(); recalcMensual(); });
+        inicio && inicio.addEventListener('change', recalcVenc);
+        valorCiclo && valorCiclo.addEventListener('input', recalcMensual);
+
+        // Cargar pago de este mes: monto = valor mensual, periodo = mes actual.
+        var btnMes = document.getElementById('btnPagoMes');
+        btnMes && btnMes.addEventListener('click', function () {
+            var hoy = new Date();
+            var ini = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+            var fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+            document.getElementById('pagoDesde').value = ini.toISOString().slice(0, 10);
+            document.getElementById('pagoHasta').value = fin.toISOString().slice(0, 10);
+            var monto = document.getElementById('pagoMonto');
+            monto.value = (valorMensualTxt ? valorMensualTxt.textContent : '').replace(/\./g, '');
+            monto.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+    })();
+</script>
+}

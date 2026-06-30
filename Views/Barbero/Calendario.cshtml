@@ -40,8 +40,13 @@
             slotMinTime: '06:00:00',
             slotMaxTime: '22:00:00',
             height: 'auto',
-            headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
-            buttonText: { today: 'Hoy', month: 'Mes', week: 'Semana', day: 'Día' },
+            headerToolbar: { left: 'prevBtn,nextBtn hoyBtn', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
+            buttonText: { month: 'Mes', week: 'Semana', day: 'Día' },
+            customButtons: {
+                prevBtn: { text: '‹ Anterior', click: function () { cal.prev(); } },
+                nextBtn: { text: 'Siguiente ›', click: function () { cal.next(); } },
+                hoyBtn: { text: 'Hoy', click: function () { cal.today(); } }
+            },
             events: '@eventosUrl',
             eventClick: function (info) {
                 info.jsEvent.preventDefault();

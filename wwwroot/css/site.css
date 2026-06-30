@@ -5878,6 +5878,88 @@ canvas {
     margin-left: -3rem;
 }
 
+/* --- Control segmentado Activo / Inactivo (reemplaza switches ambiguos) --- */
+.status-segment {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px;
+    gap: 4px;
+    background: var(--bg-secondary);
+}
+
+.status-segment .btn-check {
+    position: absolute;
+    clip: rect(0, 0, 0, 0);
+    pointer-events: none;
+}
+
+.status-segment label {
+    margin: 0;
+    cursor: pointer;
+    border-radius: 999px;
+    padding: .45rem 1.1rem;
+    font-weight: 700;
+    font-size: .9rem;
+    line-height: 1;
+    color: var(--text-muted);
+    border: 0;
+    background: transparent;
+    transition: background .15s ease, color .15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    user-select: none;
+}
+
+.status-segment label:hover {
+    color: var(--text-main);
+}
+
+.status-segment .btn-check:checked + label.seg-on {
+    background: var(--success, #198754);
+    color: #fff;
+}
+
+.status-segment .btn-check:checked + label.seg-off {
+    background: #dc3545;
+    color: #fff;
+}
+
+.status-segment .btn-check:focus-visible + label {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+}
+
+.status-segment.is-sm label {
+    padding: .3rem .8rem;
+    font-size: .82rem;
+}
+
+/* --- Calendario (FullCalendar) prev/next y toolbar --- */
+.fc .fc-button .fc-icon {
+    font-size: 1.3em;
+    line-height: 1;
+    vertical-align: middle;
+}
+
+.fc .fc-toolbar-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+}
+
+@media (max-width: 575.98px) {
+    .fc .fc-toolbar.fc-header-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: .5rem;
+    }
+    .fc .fc-toolbar-chunk {
+        display: flex;
+        justify-content: center;
+    }
+}
+
 .fc {
     color: var(--text-main);
 }

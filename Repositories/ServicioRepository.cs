@@ -10,6 +10,7 @@ public interface IServicioRepository
     Task<Servicio?> GetByIdAsync(int tenantId, int id);
     Task<int> CreateAsync(Servicio s);
     Task UpdateAsync(Servicio s);
+    Task SetActivoAsync(int tenantId, int id, bool activo);
     Task<List<Servicio>> GetByEmpleadoAsync(int tenantId, int empleadoId, bool soloActivos = true);
     Task<Servicio?> GetEfectivoAsync(int tenantId, int empleadoId, int servicioId);
     Task<List<int>> GetServicioIdsByEmpleadoAsync(int tenantId, int empleadoId);
@@ -58,6 +59,14 @@ public class ServicioRepository : IServicioRepository
             UPDATE servicios SET nombre=@Nombre, duracion_minutos=@DuracionMinutos,
                    precio=@Precio, activo=@Activo
             WHERE id=@Id AND tenant_id=@TenantId", s);
+    }
+
+    public async Task SetActivoAsync(int tenantId, int id, bool activo)
+    {
+        using var c = _db.Create();
+        await c.ExecuteAsync(
+            "UPDATE servicios SET activo=@activo WHERE id=@id AND tenant_id=@tenantId",
+            new { tenantId, id, activo });
     }
 
     public async Task<List<Servicio>> GetByEmpleadoAsync(int tenantId, int empleadoId, bool soloActivos = true)

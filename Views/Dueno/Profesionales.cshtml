@@ -62,6 +62,13 @@ else
                             else { <span class="badge bg-secondary">Inactivo</span> }
                         </td>
                         <td class="text-end">
+                            <form asp-action="ProfesionalToggleActivo" asp-route-slug="@slug" asp-route-id="@u.Id" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="activo" value="@((!u.Activo).ToString().ToLower())" />
+                                <button class="btn btn-sm @(u.Activo ? "btn-outline-danger" : "btn-outline-success")" title="@(u.Activo ? "Inactivar trabajador" : "Activar trabajador")">
+                                    <i class="bi @(u.Activo ? "bi-pause-circle" : "bi-play-circle")"></i> @(u.Activo ? "Inactivar" : "Activar")
+                                </button>
+                            </form>
                             <a class="btn btn-sm btn-outline-secondary" asp-action="Horarios" asp-route-slug="@slug" asp-route-id="@u.Id">
                                 <i class="bi bi-clock"></i> Horarios
                             </a>

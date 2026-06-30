@@ -444,8 +444,8 @@ public class SuperAdminController : Controller
         await _email.SendAsync(vm.DuenoEmail.Trim(), "Verifica tu cuenta", html);
 
         TempData["Ok"] = _email.Enabled
-            ? $"Negocio '{vm.Nombre}' creado. Enviamos verificación a {vm.DuenoEmail}."
-            : $"Negocio '{vm.Nombre}' creado. Enlace de verificación del dueño: {link}";
+            ? $"Negocio '{vm.Nombre}' creado. {vm.DuenoNombre.Trim()} quedó registrado como dueño; enviamos la verificación a {vm.DuenoEmail}."
+            : $"Negocio '{vm.Nombre}' creado. {vm.DuenoNombre.Trim()} quedó registrado como dueño. Enlace de verificación: {link}";
         return RedirectToAction(nameof(Index));
         }
         catch (Exception ex)
