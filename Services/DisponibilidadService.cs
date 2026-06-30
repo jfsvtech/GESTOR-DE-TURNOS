@@ -13,11 +13,13 @@ public class DisponibilidadService
 
     private readonly IAgendaRepository _agenda;
     private readonly ITurnoRepository _turnos;
+    private readonly ITenantRepository _tenants;
 
-    public DisponibilidadService(IAgendaRepository agenda, ITurnoRepository turnos)
+    public DisponibilidadService(IAgendaRepository agenda, ITurnoRepository turnos, ITenantRepository tenants)
     {
         _agenda = agenda;
         _turnos = turnos;
+        _tenants = tenants;
     }
 
     public async Task<List<Slot>> CalcularSlotsAsync(int tenantId, int empleadoId, int duracionMinutos, DateTime fecha)
@@ -35,7 +37,8 @@ public class DisponibilidadService
         var bloqueos = await _agenda.GetBloqueosEnRangoAsync(tenantId, empleadoId, dia, dia.AddDays(1));
         var ocupados = await _turnos.GetActivosDelDiaAsync(tenantId, empleadoId, dia);
 
-        var ahora = DateTime.Now;
+        var tenant = await _tenants.GetByIdAsync(tenantId);
+        var ahora = TenantTime.Now(tenant);
         var dur = TimeSpan.FromMinutes(duracionMinutos);
         var paso = TimeSpan.FromMinutes(GranularidadMin);
 
@@ -62,9 +65,10 @@ public class DisponibilidadService
     /// <summary>Devuelve el primer hueco disponible a partir de ahora, buscando hasta <paramref name="maxDias"/> días.</summary>
     public async Task<DateTime?> ProximoSlotAsync(int tenantId, int empleadoId, int duracionMinutos, int maxDias = 21)
     {
+        var tenant = await _tenants.GetByIdAsync(tenantId);
         for (int i = 0; i <= maxDias; i++)
         {
-            var dia = DateTime.Today.AddDays(i);
+            var dia = TenantTime.Today(tenant).AddDays(i);
             var slots = await CalcularSlotsAsync(tenantId, empleadoId, duracionMinutos, dia);
             if (slots.Count > 0) return slots[0].Inicio;
         }

@@ -1,5 +1,6 @@
 using GeneradorTurnos.Auth;
 using GeneradorTurnos.Models;
+using GeneradorTurnos.Services;
 using GeneradorTurnos.Tenancy;
 using Microsoft.AspNetCore.Mvc;
 
@@ -35,6 +36,8 @@ public abstract class TenantBaseController : Controller
         ViewData["TenantNombre"] = Tenant.Current?.Nombre;
         ViewData["TenantSlug"] = Tenant.Current?.Slug;
         ViewData["TenantFotoUrl"] = Tenant.Current?.FotoUrl;
+        ViewData["TenantTimeZoneId"] = Tenant.Current?.TimeZoneId ?? "America/Bogota";
+        ViewData["TenantNow"] = TenantTime.Now(Tenant.Current);
         ViewData["UsuarioNombre"] = User.Identity?.IsAuthenticated == true ? User.GetNombre() : null;
         ViewData["UsuarioRol"] = UsuarioPerteneceAlTenant() ? User.GetRol()?.ToString() : null;
         base.OnActionExecuting(context);

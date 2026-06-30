@@ -70,23 +70,29 @@
                     <span asp-validation-for="Password" class="text-danger small"></span>
                 </div>
 
-                <label class="form-label">Servicios que presta</label>
-                <div class="row row-cols-1 row-cols-sm-2 g-2 mb-3">
+                <div class="d-flex justify-content-between align-items-end gap-2 mb-2">
+                    <div>
+                        <label class="form-label mb-0">Servicios que presta</label>
+                        <div class="form-text">Selecciona las tarjetas de servicios. Cada cambio queda guardado al finalizar.</div>
+                    </div>
+                    <span class="badge text-bg-light border">@servicios.Count servicio(s)</span>
+                </div>
+                <div class="service-picker-grid mb-3">
                     @foreach (var s in servicios)
                     {
-                        <div class="col">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="ServicioIds" value="@s.Id"
-                                       id="serv-@s.Id" @(Model.ServicioIds.Contains(s.Id) ? "checked" : "") />
-                                <label class="form-check-label" for="serv-@s.Id">
-                                    @s.Nombre <span class="text-muted small">(@s.DuracionMinutos min)</span>
-                                </label>
-                            </div>
-                        </div>
+                        <label class="service-pick" for="serv-@s.Id">
+                            <input type="checkbox" name="ServicioIds" value="@s.Id"
+                                   id="serv-@s.Id" @(Model.ServicioIds.Contains(s.Id) ? "checked" : "") />
+                            <span class="service-pick-check"><i class="bi bi-check2"></i></span>
+                            <span class="service-pick-body">
+                                <strong>@s.Nombre</strong>
+                                <small>@s.DuracionMinutos min · $@s.Precio.ToString("#,##0")</small>
+                            </span>
+                        </label>
                     }
                     @if (servicios.Count == 0)
                     {
-                        <div class="col"><span class="text-muted small">Primero crea servicios.</span></div>
+                        <div class="empty-state-mini"><i class="bi bi-scissors"></i> Primero crea servicios para poder asignarlos.</div>
                     }
                 </div>
 

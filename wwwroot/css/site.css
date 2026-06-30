@@ -5936,6 +5936,125 @@ canvas {
     font-size: .82rem;
 }
 
+.service-picker-grid,
+.worker-service-grid,
+.schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: .85rem;
+}
+
+.service-pick {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: .85rem;
+    background: var(--card-bg);
+    cursor: pointer;
+    transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease, background .16s ease;
+}
+
+.service-pick:hover,
+.worker-service-card:hover,
+.schedule-day-card:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
+    box-shadow: 0 16px 34px rgba(15, 23, 42, .10);
+}
+
+.service-pick input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.service-pick-check {
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border);
+    color: transparent;
+    background: var(--bg-secondary);
+    flex: 0 0 auto;
+}
+
+.service-pick-body {
+    display: grid;
+    gap: .15rem;
+}
+
+.service-pick-body small {
+    color: var(--text-muted);
+}
+
+.service-pick:has(input:checked) {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 10%, var(--card-bg));
+}
+
+.service-pick:has(input:checked) .service-pick-check {
+    color: #fff;
+    border-color: var(--primary);
+    background: var(--primary);
+}
+
+.empty-state-mini {
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+    padding: 1rem;
+    color: var(--text-muted);
+    background: var(--bg-secondary);
+}
+
+.worker-service-card,
+.schedule-day-card,
+.time-context {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--card-bg);
+}
+
+.worker-service-card,
+.schedule-day-card {
+    padding: 1rem;
+    transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.service-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-weight: 800;
+}
+
+.service-switch input {
+    width: 2.6rem;
+    height: 1.35rem;
+    accent-color: var(--primary);
+}
+
+.service-switch:has(input:checked) {
+    color: var(--primary);
+}
+
+.time-context {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem 1.25rem;
+    padding: .9rem 1rem;
+    color: var(--text-main);
+}
+
+.time-context i {
+    color: var(--primary);
+}
+
 /* --- Calendario (FullCalendar) prev/next y toolbar --- */
 .fc .fc-button .fc-icon {
     font-size: 1.3em;

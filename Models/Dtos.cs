@@ -153,6 +153,7 @@ public class SaasTenantResumen
     public string Slug { get; set; } = "";
     public string Plan { get; set; } = "";
     public string CicloSuscripcion { get; set; } = "Mensual";
+    public string TimeZoneId { get; set; } = "America/Bogota";
     public decimal ValorSuscripcion { get; set; }
     public int MaxUsuarios { get; set; }
     public bool Activo { get; set; }

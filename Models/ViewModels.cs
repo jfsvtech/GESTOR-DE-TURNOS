@@ -207,6 +207,8 @@ public class TenantFormVm
     public string Plan { get; set; } = "Basico";
     [Display(Name = "Ciclo de contrato")]
     public string CicloSuscripcion { get; set; } = "Mensual";
+    [Display(Name = "Zona horaria")]
+    public string TimeZoneId { get; set; } = "America/Bogota";
     [Range(0, 999999999, ErrorMessage = "Valor de suscripcion invalido")]
     [Display(Name = "Valor mensual de suscripcion")]
     public decimal ValorSuscripcion { get; set; }
@@ -312,6 +314,7 @@ public class SuscripcionFormVm
     public int TenantId { get; set; }
     [Required] public string Plan { get; set; } = "Basico";
     [Required] public string CicloSuscripcion { get; set; } = "Mensual";
+    [Required] public string TimeZoneId { get; set; } = "America/Bogota";
     [Range(0, 999999999)] public decimal ValorSuscripcion { get; set; }
     [Required] public string EstadoSuscripcion { get; set; } = "Activo";
     public DateTime? SuscripcionInicio { get; set; }

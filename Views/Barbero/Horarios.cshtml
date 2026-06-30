@@ -4,35 +4,62 @@
     var slug = ViewData["TenantSlug"] as string;
     var dias = (string[])ViewBag.Dias;
     var porDia = Model.GroupBy(h => h.DiaSemana).ToDictionary(g => g.Key, g => g.First());
+    var zona = ViewData["TenantTimeZoneId"] as string ?? "America/Bogota";
+    var ahoraTenant = ViewData["TenantNow"] is DateTime dt ? dt : DateTime.Now;
 }
 
 <h1 class="section-title mb-1">Mis horarios de trabajo</h1>
-<p class="page-sub mb-4">Define tu franja horaria por día. Deja vacío los días que no trabajas.</p>
+<p class="page-sub mb-4">Define tu franja horaria por dia. Deja vacio los dias que no trabajas.</p>
 
-<div class="card"><div class="card-body">
-    <form asp-action="Horarios" asp-route-slug="@slug" method="post">
-        @Html.AntiForgeryToken()
-        <div class="table-responsive">
-            <table class="table align-middle">
-                <thead class="table-light"><tr><th>Día</th><th>Hora inicio</th><th>Hora fin</th></tr></thead>
-                <tbody>
+<div class="time-context mb-3">
+    <div><i class="bi bi-globe2 me-1"></i><strong>Zona horaria:</strong> @zona</div>
+    <div><i class="bi bi-clock me-1"></i><strong>Hora local:</strong> @ahoraTenant.ToString("dd/MM/yyyy HH:mm")</div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card"><div class="card-body">
+            <form asp-action="Horarios" asp-route-slug="@slug" method="post">
+                @Html.AntiForgeryToken()
+                <div class="schedule-grid">
                     @for (int d = 0; d < 7; d++)
                     {
                         var tiene = porDia.TryGetValue(d, out var h);
-                        <tr>
-                            <td class="fw-semibold">@dias[d]</td>
-                            <td>
-                                <input type="hidden" name="dia" value="@d" />
-                                <input type="time" name="inicio" class="form-control" value="@(tiene ? h!.HoraInicio.ToString("HH\\:mm") : "")" />
-                            </td>
-                            <td>
-                                <input type="time" name="fin" class="form-control" value="@(tiene ? h!.HoraFin.ToString("HH\\:mm") : "")" />
-                            </td>
-                        </tr>
+                        <div class="schedule-day-card">
+                            <div class="fw-bold">@dias[d]</div>
+                            <input type="hidden" name="dia" value="@d" />
+                            <label class="form-label small">Inicio</label>
+                            <input type="time" name="inicio" class="form-control" value="@(tiene ? h!.HoraInicio.ToString("HH\\:mm") : "")" />
+                            <label class="form-label small mt-2">Fin</label>
+                            <input type="time" name="fin" class="form-control" value="@(tiene ? h!.HoraFin.ToString("HH\\:mm") : "")" />
+                        </div>
                     }
-                </tbody>
-            </table>
-        </div>
-        <button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar horarios</button>
-    </form>
-</div></div>
+                </div>
+                <button class="btn btn-primary mt-3"><i class="bi bi-check-lg me-1"></i>Guardar horarios</button>
+            </form>
+        </div></div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card h-100"><div class="card-body">
+            <h2 class="h6 mb-1"><i class="bi bi-pause-circle me-1"></i>Tiempos muertos fijos</h2>
+            <p class="page-sub small">Crea bloqueos recurrentes para almuerzo, descanso o actividades que no deben recibir reservas.</p>
+            <form asp-action="BloquearRecurrente" asp-route-slug="@slug" method="post" class="row g-2">
+                @Html.AntiForgeryToken()
+                <div class="col-12">
+                    <label class="form-label">Dia</label>
+                    <select name="diaSemana" class="form-select">
+                        @for (int d = 0; d < 7; d++)
+                        {
+                            <option value="@d">@dias[d]</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-6"><label class="form-label">Inicio</label><input type="time" name="horaInicio" class="form-control" value="12:00" required /></div>
+                <div class="col-6"><label class="form-label">Fin</label><input type="time" name="horaFin" class="form-control" value="13:00" required /></div>
+                <div class="col-12"><label class="form-label">Motivo</label><input name="motivo" class="form-control" value="Almuerzo" /></div>
+                <div class="col-12"><label class="form-label">Repetir por</label><input type="number" name="semanas" min="1" max="52" value="8" class="form-control" /></div>
+                <div class="col-12"><button class="btn btn-outline-primary w-100"><i class="bi bi-calendar2-plus me-1"></i>Crear bloqueo fijo</button></div>
+            </form>
+        </div></div>
+    </div>
+</div>

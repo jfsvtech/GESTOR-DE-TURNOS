@@ -505,10 +505,51 @@ public class DuenoController : TenantBaseController
         return RedirectToAction(nameof(Profesionales), new { slug = Slug });
     }
 
-    private static (DateTime desde, DateTime hasta) Rango(DateTime? desde, DateTime? hasta)
+    [HttpPost("profesionales/{id:int}/bloquear-recurrente")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> BloquearRecurrente(int id, int diaSemana, string horaInicio, string horaFin, string? motivo, int semanas = 8)
     {
-        var d = (desde ?? new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1)).Date;
-        var h = (hasta ?? DateTime.Today).Date.AddDays(1);
+        if (GuardTenant() is { } r) return r;
+        var u = await _usuarios.GetByIdInTenantAsync(TenantId, id);
+        if (u is null || u.Rol != Rol.Barbero) return NotFound();
+
+        if (diaSemana < 0 || diaSemana > 6
+            || !TimeOnly.TryParse(horaInicio, out var hi)
+            || !TimeOnly.TryParse(horaFin, out var hf)
+            || hf <= hi)
+        {
+            TempData["Error"] = "Revisa el dia y el rango del tiempo muerto.";
+            return RedirectToAction(nameof(Horarios), new { slug = Slug, id });
+        }
+
+        semanas = Math.Clamp(semanas, 1, 52);
+        var hoy = TenantTime.Today(Tenant.Current);
+        var diasHasta = ((diaSemana - (int)hoy.DayOfWeek) + 7) % 7;
+        var primeraFecha = hoy.AddDays(diasHasta);
+        var textoMotivo = string.IsNullOrWhiteSpace(motivo) ? "Tiempo muerto fijo" : motivo.Trim();
+
+        for (var i = 0; i < semanas; i++)
+        {
+            var fecha = primeraFecha.AddDays(i * 7);
+            await _agenda.CrearBloqueoAsync(new Bloqueo
+            {
+                TenantId = TenantId,
+                EmpleadoId = id,
+                FechaHoraInicio = fecha.Date + hi.ToTimeSpan(),
+                FechaHoraFin = fecha.Date + hf.ToTimeSpan(),
+                Motivo = textoMotivo
+            });
+        }
+
+        TempData["Ok"] = $"Tiempo muerto fijo creado para {u.Nombre} por {semanas} semana(s).";
+        return RedirectToAction(nameof(Horarios), new { slug = Slug, id });
+    }
+
+    private (DateTime desde, DateTime hasta) Rango(DateTime? desde, DateTime? hasta)
+    {
+        var hoy = TenantTime.Today(Tenant.Current);
+        var d = (desde ?? new DateTime(hoy.Year, hoy.Month, 1)).Date;
+        var h = (hasta ?? hoy).Date.AddDays(1);
         if (h <= d) h = d.AddDays(1);
         return (d, h);
     }

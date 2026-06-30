@@ -210,6 +210,7 @@ public class SuperAdminController : Controller
 
         empresa.Plan = vm.Plan;
         empresa.CicloSuscripcion = vm.CicloSuscripcion;
+        empresa.TimeZoneId = vm.TimeZoneId;
         empresa.ValorSuscripcion = vm.ValorSuscripcion;
         empresa.EstadoSuscripcion = vm.EstadoSuscripcion;
         empresa.SuscripcionInicio = vm.SuscripcionInicio;
@@ -217,7 +218,7 @@ public class SuperAdminController : Controller
         empresa.RecordatorioPagoDias = vm.RecordatorioPagoDias;
         await _tenants.UpdateSuscripcionAsync(empresa);
         await Auditar(id, "Actualizar suscripcion", "Tenant", id,
-            $"Plan {vm.Plan}, ciclo {vm.CicloSuscripcion}, valor ${vm.ValorSuscripcion:#,##0}, estado {vm.EstadoSuscripcion}, vence {vm.SuscripcionVencimiento:yyyy-MM-dd}");
+            $"Plan {vm.Plan}, ciclo {vm.CicloSuscripcion}, zona {vm.TimeZoneId}, valor ${vm.ValorSuscripcion:#,##0}, estado {vm.EstadoSuscripcion}, vence {vm.SuscripcionVencimiento:yyyy-MM-dd}");
         TempData["Ok"] = "Suscripcion actualizada.";
         return RedirectToAction(nameof(Empresa), new { id });
     }
@@ -421,7 +422,7 @@ public class SuperAdminController : Controller
         {
         tenantId = await _tenants.CreateAsync(new Tenant
         {
-            Nombre = vm.Nombre.Trim(), Slug = slug, Plan = vm.Plan, CicloSuscripcion = vm.CicloSuscripcion,
+            Nombre = vm.Nombre.Trim(), Slug = slug, Plan = vm.Plan, CicloSuscripcion = vm.CicloSuscripcion, TimeZoneId = vm.TimeZoneId,
             ValorSuscripcion = vm.ValorSuscripcion,
             SuscripcionInicio = DateTime.Today,
             SuscripcionVencimiento = DateTime.Today.AddMonths(MesesPorCiclo(vm.CicloSuscripcion)),

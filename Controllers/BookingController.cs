@@ -74,8 +74,9 @@ public class BookingController : TenantBaseController
         var servicios = await _servicios.GetByEmpleadoAsync(TenantId, empleadoId);
         var sel = servicioId.HasValue && servicios.Any(s => s.Id == servicioId.Value)
             ? servicioId.Value : servicios.FirstOrDefault()?.Id ?? 0;
+        var hoyTenant = TenantTime.Today(Tenant.Current);
         var dia = DateTime.TryParse(fecha, CultureInfo.InvariantCulture, DateTimeStyles.None, out var f)
-            && f.Date >= DateTime.Today ? f.Date : DateTime.Today;
+            && f.Date >= hoyTenant ? f.Date : hoyTenant;
         return View(new ReservarViewModel
         {
             EmpleadoId = empleadoId,
@@ -92,7 +93,7 @@ public class BookingController : TenantBaseController
     public async Task<IActionResult> Slots(int empleadoId, int servicioId, string fecha)
     {
         if (!DateTime.TryParse(fecha, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dia))
-            dia = DateTime.Today;
+            dia = TenantTime.Today(Tenant.Current);
 
         var empleado = await _usuarios.GetByIdInTenantAsync(TenantId, empleadoId);
         if (empleado is null || !empleado.Activo || !empleado.Atiende) return Json(Array.Empty<object>());
@@ -202,7 +203,7 @@ public class BookingController : TenantBaseController
             EmpleadoNombre = empleado?.Nombre ?? "",
             ServicioId = turno.ServicioId,
             Servicios = servicio is null ? new() : new List<Servicio> { servicio },
-            Fecha = DateTime.Today
+            Fecha = TenantTime.Today(Tenant.Current)
         });
     }
 

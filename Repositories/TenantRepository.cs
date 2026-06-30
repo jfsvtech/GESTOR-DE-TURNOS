@@ -60,6 +60,7 @@ public class TenantRepository : ITenantRepository
                 t.slug,
                 t.plan,
                 t.ciclo_suscripcion,
+                t.time_zone_id,
                 t.valor_suscripcion,
                 t.max_usuarios,
                 t.activo,
@@ -104,10 +105,10 @@ public class TenantRepository : ITenantRepository
         using var c = _db.Create();
         return await c.ExecuteScalarAsync<int>(@"
             INSERT INTO tenants
-                (nombre, slug, plan, ciclo_suscripcion, valor_suscripcion, max_usuarios, activo,
+                (nombre, slug, plan, ciclo_suscripcion, time_zone_id, valor_suscripcion, max_usuarios, activo,
                  suscripcion_inicio, suscripcion_vencimiento, estado_suscripcion, recordatorio_pago_dias)
             VALUES
-                (@Nombre, @Slug, @Plan, @CicloSuscripcion, @ValorSuscripcion, @MaxUsuarios, @Activo,
+                (@Nombre, @Slug, @Plan, @CicloSuscripcion, @TimeZoneId, @ValorSuscripcion, @MaxUsuarios, @Activo,
                  @SuscripcionInicio, @SuscripcionVencimiento, @EstadoSuscripcion, @RecordatorioPagoDias)
             RETURNING id", t);
     }
@@ -145,6 +146,7 @@ public class TenantRepository : ITenantRepository
             UPDATE tenants
             SET plan=@Plan,
                 ciclo_suscripcion=@CicloSuscripcion,
+                time_zone_id=@TimeZoneId,
                 valor_suscripcion=@ValorSuscripcion,
                 suscripcion_inicio=@SuscripcionInicio,
                 suscripcion_vencimiento=@SuscripcionVencimiento,

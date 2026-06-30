@@ -20,13 +20,15 @@
     var ultimoPago = Model.Pagos.OrderByDescending(p => p.FechaPago).FirstOrDefault();
     var totalPagado = Model.Pagos.Sum(p => p.Monto);
     var estadoPago = dias is null ? "sin-fecha" : dias < 0 ? "vencida" : dias <= e.RecordatorioPagoDias ? "por-vencer" : "al-dia";
+    var ahoraEmpresa = GeneradorTurnos.Services.TenantTime.Now(e);
+    var zonas = new[] { "America/Bogota", "America/Mexico_City", "America/Lima", "America/New_York", "America/Chicago", "America/Los_Angeles", "Europe/Madrid" };
 }
 
 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
     <div>
         <a class="small text-muted" asp-action="Index"><i class="bi bi-arrow-left"></i> Volver al SaaS</a>
         <h1 class="section-title mb-1">@e.Nombre</h1>
-        <p class="page-sub mb-0">@negocioUrl - plan @e.Plan - ciclo @e.CicloSuscripcion - @e.EstadoSuscripcion</p>
+        <p class="page-sub mb-0">@negocioUrl - plan @e.Plan - ciclo @e.CicloSuscripcion - zona @e.TimeZoneId - @e.EstadoSuscripcion</p>
     </div>
     <a class="btn btn-outline-primary" href="@negocioUrl" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right me-1"></i>Entrar al negocio</a>
 </div>
@@ -58,6 +60,7 @@
     <div class="col-lg-3 col-6"><div class="stat"><div class="lbl">Valor del ciclo</div><div class="val">$@e.ValorSuscripcion.ToString("#,##0")</div><div class="small text-muted">@e.CicloSuscripcion (~$@valorMensual.ToString("#,##0")/mes)</div></div></div>
     <div class="col-lg-3 col-6"><div class="stat"><div class="lbl">Próximo vencimiento</div><div class="val">@(e.SuscripcionVencimiento?.ToString("dd/MM/yyyy") ?? "Sin fecha")</div><div class="small @(estadoPago == "vencida" ? "text-danger" : estadoPago == "por-vencer" ? "text-warning" : "text-muted")">@(dias is null ? "" : dias < 0 ? $"Vencida hace {-dias} días" : $"Faltan {dias} días")</div></div></div>
     <div class="col-lg-3 col-6"><div class="stat"><div class="lbl">Total pagado</div><div class="val">$@totalPagado.ToString("#,##0")</div><div class="small text-muted">@Model.Pagos.Count pago(s)</div></div></div>
+    <div class="col-lg-3 col-6"><div class="stat"><div class="lbl">Hora local</div><div class="val">@ahoraEmpresa.ToString("HH:mm")</div><div class="small text-muted">@e.TimeZoneId</div></div></div>
 </div>
 
 <div class="accordion saas-admin-accordion" id="empresaAdmin">
@@ -88,6 +91,16 @@
                                 <div class="col-md-6"><label class="form-label">Inicio</label><input type="date" name="SuscripcionInicio" id="inicioSus" value="@e.SuscripcionInicio?.ToString("yyyy-MM-dd")" class="form-control" /></div>
                                 <div class="col-md-6"><label class="form-label">Vencimiento</label><input type="date" name="SuscripcionVencimiento" id="vencSus" value="@e.SuscripcionVencimiento?.ToString("yyyy-MM-dd")" class="form-control" /></div>
                                 <div class="col-md-6"><label class="form-label">Recordar pago (días antes)</label><input type="number" min="1" max="60" name="RecordatorioPagoDias" value="@e.RecordatorioPagoDias" class="form-control" /></div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Zona horaria</label>
+                                    <select name="TimeZoneId" class="form-select">
+                                        @foreach (var z in zonas)
+                                        {
+                                            <option value="@z" selected="@(e.TimeZoneId == z)">@z</option>
+                                        }
+                                    </select>
+                                    <div class="form-text">Hora actual: @ahoraEmpresa.ToString("dd/MM/yyyy HH:mm")</div>
+                                </div>
                                 <div class="col-12"><button class="btn btn-primary"><i class="bi bi-check2 me-1"></i>Guardar contrato</button></div>
                             </form>
                         </div>

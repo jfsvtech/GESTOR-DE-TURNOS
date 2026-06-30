@@ -18,10 +18,11 @@ public class TurnoService
     private readonly DisponibilidadService _disponibilidad;
     private readonly INotificacionRepository _notificaciones;
     private readonly IEmailSender _email;
+    private readonly ITenantRepository _tenants;
 
     public TurnoService(ITurnoRepository turnos, IServicioRepository servicios,
         IUsuarioRepository usuarios, DisponibilidadService disponibilidad, INotificacionRepository notificaciones,
-        IEmailSender email)
+        IEmailSender email, ITenantRepository tenants)
     {
         _turnos = turnos;
         _servicios = servicios;
@@ -29,6 +30,7 @@ public class TurnoService
         _disponibilidad = disponibilidad;
         _notificaciones = notificaciones;
         _email = email;
+        _tenants = tenants;
     }
 
     public async Task<OperacionResultado> ReservarAsync(int tenantId, int clienteId, int empleadoId,
@@ -42,7 +44,8 @@ public class TurnoService
         if (servicio is null || !servicio.Activo)
             return OperacionResultado.Falla("Ese profesional no presta el servicio elegido.");
 
-        if (inicio < DateTime.Now)
+        var ahora = TenantTime.Now(await _tenants.GetByIdAsync(tenantId));
+        if (inicio < ahora)
             return OperacionResultado.Falla("No puedes reservar en un horario pasado.");
 
         // El inicio debe coincidir con un hueco realmente disponible.
@@ -85,7 +88,8 @@ public class TurnoService
         if (turno.ClienteId != actorClienteId) return OperacionResultado.Falla("No puedes modificar este turno.");
         if (turno.Estado is EstadoTurno.Completado or EstadoTurno.Cancelado)
             return OperacionResultado.Falla("Este turno ya no se puede modificar.");
-        if (nuevoInicio < DateTime.Now) return OperacionResultado.Falla("No puedes mover el turno al pasado.");
+        var ahora = TenantTime.Now(await _tenants.GetByIdAsync(tenantId));
+        if (nuevoInicio < ahora) return OperacionResultado.Falla("No puedes mover el turno al pasado.");
 
         var servicio = await _servicios.GetEfectivoAsync(tenantId, turno.EmpleadoId, turno.ServicioId);
         if (servicio is null) return OperacionResultado.Falla("Servicio no encontrado.");

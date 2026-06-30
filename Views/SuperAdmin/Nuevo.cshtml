@@ -1,6 +1,7 @@
 @model TenantFormVm
 @{
     ViewData["Title"] = "Nuevo negocio";
+    var zonas = new[] { "America/Bogota", "America/Mexico_City", "America/Lima", "America/New_York", "America/Chicago", "America/Los_Angeles", "Europe/Madrid" };
 }
 
 <div class="row justify-content-center">
@@ -38,6 +39,16 @@
                             <option>Mensual</option><option>Trimestral</option><option>Anual</option>
                         </select>
                         <div class="form-text">Contrato del plan; los pagos pueden registrarse mensual.</div>
+                    </div>
+                    <div class="col-md-7 mb-3">
+                        <label asp-for="TimeZoneId" class="form-label"></label>
+                        <select asp-for="TimeZoneId" class="form-select">
+                            @foreach (var z in zonas)
+                            {
+                                <option value="@z">@z</option>
+                            }
+                        </select>
+                        <span asp-validation-for="TimeZoneId" class="text-danger small"></span>
                     </div>
                     <div class="col-md-5 mb-3">
                         <label asp-for="ValorSuscripcion" class="form-label"></label>

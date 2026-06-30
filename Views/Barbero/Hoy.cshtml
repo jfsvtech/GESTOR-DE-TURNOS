@@ -3,13 +3,16 @@
     ViewData["Title"] = "Hoy";
     var slug = ViewData["TenantSlug"] as string;
     var atiende = (bool)(ViewBag.Atiende ?? false);
+    var ahoraTenant = ViewData["TenantNow"] is DateTime dt ? dt : DateTime.Now;
+    var zona = ViewData["TenantTimeZoneId"] as string ?? "America/Bogota";
 }
 
 <div class="today-hero mb-3">
     <div>
         <span class="chip"><i class="bi bi-lightning-charge"></i> Jornada de hoy</span>
-        <h1>@DateTime.Now.ToString("HH:mm")</h1>
+        <h1>@ahoraTenant.ToString("HH:mm")</h1>
         <p>@Model.Fecha.ToString("dddd dd 'de' MMMM")</p>
+        <small class="opacity-75"><i class="bi bi-globe2"></i> Zona horaria: @zona</small>
     </div>
     <a class="btn btn-light" asp-action="NuevoTurno" asp-route-slug="@slug"><i class="bi bi-plus-lg"></i> Nuevo turno</a>
 </div>

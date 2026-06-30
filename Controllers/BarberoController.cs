@@ -45,12 +45,13 @@ public class BarberoController : TenantBaseController
     public async Task<IActionResult> Hoy()
     {
         if (GuardTenant() is { } r) return r;
-        var hoy = DateTime.Today;
+        var ahora = TenantTime.Now(Tenant.Current);
+        var hoy = ahora.Date;
         var usuario = await _usuarios.GetByIdInTenantAsync(TenantId, CurrentUserId);
         ViewBag.Atiende = usuario?.Atiende ?? false;
         var agenda = await _turnos.GetByEmpleadoRangoAsync(TenantId, CurrentUserId, hoy, hoy.AddDays(1));
         var proximo = agenda
-            .Where(t => t.FechaHoraInicio >= DateTime.Now && t.Estado is not EstadoTurno.Cancelado and not EstadoTurno.Completado)
+            .Where(t => t.FechaHoraInicio >= ahora && t.Estado is not EstadoTurno.Cancelado and not EstadoTurno.Completado)
             .OrderBy(t => t.FechaHoraInicio)
             .FirstOrDefault();
         var historial = proximo is null
@@ -67,7 +68,7 @@ public class BarberoController : TenantBaseController
         if (GuardTenant() is { } r) return r;
 
         var dia = DateTime.TryParse(fecha, CultureInfo.InvariantCulture, DateTimeStyles.None, out var d)
-            ? d.Date : DateTime.Today;
+            ? d.Date : TenantTime.Today(Tenant.Current);
 
         var turnos = await _turnos.GetByEmpleadoRangoAsync(TenantId, CurrentUserId, dia, dia.AddDays(1));
         var bloqueos = await _agenda.GetBloqueosEnRangoAsync(TenantId, CurrentUserId, dia, dia.AddDays(1));
@@ -144,11 +145,15 @@ public class BarberoController : TenantBaseController
         if (GuardTenant() is { } r) return r;
         ofrecidos ??= new();
         var catalogo = await _servicios.GetCatalogoConOverridesAsync(TenantId, CurrentUserId);
+        var cambios = 0;
         foreach (var s in catalogo)
         {
             var ofrece = ofrecidos.Contains(s.ServicioId);
             decimal? precio = precios != null && precios.TryGetValue(s.ServicioId, out var p) && p > 0 ? p : null;
             int? dur = duraciones != null && duraciones.TryGetValue(s.ServicioId, out var du) && du > 0 ? du : null;
+            if (ofrece == s.Ofrecido && precio == s.PrecioOverride && dur == s.DuracionOverride)
+                continue;
+
             await _servicios.SolicitarCambioAsync(new ServicioSolicitud
             {
                 TenantId = TenantId,
@@ -158,8 +163,11 @@ public class BarberoController : TenantBaseController
                 PrecioOverride = precio,
                 DuracionOverride = dur
             });
+            cambios++;
         }
-        TempData["Ok"] = "Tus cambios quedaron pendientes de aprobacion del dueno.";
+        TempData["Ok"] = cambios == 0
+            ? "No detectamos cambios nuevos."
+            : $"{cambios} cambio(s) quedaron pendientes de aprobacion del dueno.";
         return RedirectToAction(nameof(MisServicios), new { slug = Slug });
     }
 
@@ -223,6 +231,43 @@ public class BarberoController : TenantBaseController
         }
         else TempData["Error"] = "Rango horario inválido.";
         return RedirectToAction(nameof(Agenda), new { slug = Slug, fecha });
+    }
+
+    [HttpPost("bloquear-recurrente")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> BloquearRecurrente(int diaSemana, string horaInicio, string horaFin, string? motivo, int semanas = 8)
+    {
+        if (GuardTenant() is { } r) return r;
+        if (diaSemana < 0 || diaSemana > 6
+            || !TimeOnly.TryParse(horaInicio, out var hi)
+            || !TimeOnly.TryParse(horaFin, out var hf)
+            || hf <= hi)
+        {
+            TempData["Error"] = "Revisa el dia y el rango del tiempo muerto.";
+            return RedirectToAction(nameof(Horarios), new { slug = Slug });
+        }
+
+        semanas = Math.Clamp(semanas, 1, 52);
+        var hoy = TenantTime.Today(Tenant.Current);
+        var diasHasta = ((diaSemana - (int)hoy.DayOfWeek) + 7) % 7;
+        var primeraFecha = hoy.AddDays(diasHasta);
+        var textoMotivo = string.IsNullOrWhiteSpace(motivo) ? "Tiempo muerto fijo" : motivo.Trim();
+
+        for (var i = 0; i < semanas; i++)
+        {
+            var fecha = primeraFecha.AddDays(i * 7);
+            await _agenda.CrearBloqueoAsync(new Bloqueo
+            {
+                TenantId = TenantId,
+                EmpleadoId = CurrentUserId,
+                FechaHoraInicio = fecha.Date + hi.ToTimeSpan(),
+                FechaHoraFin = fecha.Date + hf.ToTimeSpan(),
+                Motivo = textoMotivo
+            });
+        }
+
+        TempData["Ok"] = $"Tiempo muerto fijo creado por {semanas} semana(s).";
+        return RedirectToAction(nameof(Horarios), new { slug = Slug });
     }
 
     // ---------------- Reserva manual (walk-in) ----------------
@@ -318,10 +363,11 @@ public class BarberoController : TenantBaseController
     public async Task<IActionResult> Eventos(string? start, string? end)
     {
         if (!UsuarioPerteneceAlTenant()) return Json(Array.Empty<object>());
+        var hoyTenant = TenantTime.Today(Tenant.Current);
         var desde = DateTime.TryParse(start, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var ds)
-            ? ds.Date : DateTime.Today;
+            ? ds.Date : hoyTenant;
         var hasta = DateTime.TryParse(end, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out var he)
-            ? he.Date : DateTime.Today.AddMonths(1);
+            ? he.Date : hoyTenant.AddMonths(1);
         var turnos = await _turnos.GetByEmpleadoRangoAsync(TenantId, CurrentUserId, desde, hasta);
 
         string Color(EstadoTurno e) => e switch
@@ -398,10 +444,11 @@ public class BarberoController : TenantBaseController
         return RedirectToAction(nameof(Galeria), new { slug = Slug });
     }
 
-    private static (DateTime desde, DateTime hasta) Rango(DateTime? desde, DateTime? hasta)
+    private (DateTime desde, DateTime hasta) Rango(DateTime? desde, DateTime? hasta)
     {
-        var d = (desde ?? new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1)).Date;
-        var h = (hasta ?? DateTime.Today).Date.AddDays(1);
+        var hoy = TenantTime.Today(Tenant.Current);
+        var d = (desde ?? new DateTime(hoy.Year, hoy.Month, 1)).Date;
+        var h = (hasta ?? hoy).Date.AddDays(1);
         if (h <= d) h = d.AddDays(1);
         return (d, h);
     }

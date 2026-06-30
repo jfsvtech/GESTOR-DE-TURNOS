@@ -8,6 +8,7 @@ public class Tenant
     public string Slug { get; set; } = "";
     public string Plan { get; set; } = "Basico";
     public string CicloSuscripcion { get; set; } = "Mensual";
+    public string TimeZoneId { get; set; } = "America/Bogota";
     public decimal ValorSuscripcion { get; set; }
     public int MaxUsuarios { get; set; } = 10;
     public bool Activo { get; set; } = true;
