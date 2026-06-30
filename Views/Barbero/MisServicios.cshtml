@@ -4,8 +4,13 @@
     var slug = ViewData["TenantSlug"] as string;
 }
 
-<h1 class="section-title mb-1">Mis servicios y precios</h1>
-<p class="page-sub mb-4">Propón servicios, precio y duración. El dueño revisa y aprueba antes de que el cambio quede publicado.</p>
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+    <div>
+        <h1 class="section-title mb-1">Mis servicios y precios</h1>
+        <p class="page-sub mb-0">Edita rapido precio, duracion y disponibilidad. El dueno aprueba antes de publicar.</p>
+    </div>
+    <span class="service-change-pill d-none" id="pendingChanges"><i class="bi bi-pencil-square"></i> Cambios pendientes</span>
+</div>
 
 @if (Model.Count == 0)
 {
@@ -13,45 +18,91 @@
 }
 else
 {
-    <form asp-action="MisServicios" asp-route-slug="@slug" method="post">
+    <form asp-action="MisServicios" asp-route-slug="@slug" method="post" id="servicesInlineForm">
         @Html.AntiForgeryToken()
-        <div class="worker-service-grid mb-3">
-            @foreach (var s in Model)
-            {
-                <article class="worker-service-card">
-                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
-                        <div>
-                            <h2 class="h6 mb-1">@s.Nombre</h2>
-                            <p class="page-sub small mb-0">Base: $@s.PrecioBase.ToString("#,##0") · @s.DuracionBase min</p>
+        <div class="service-edit-shell">
+            <div class="service-edit-head">
+                <span>Servicio</span>
+                <span>Estado</span>
+                <span>Precio</span>
+                <span>Duracion</span>
+                <span></span>
+            </div>
+            <div class="service-edit-list">
+                @foreach (var s in Model)
+                {
+                    var precioActual = s.PrecioOverride?.ToString("0", System.Globalization.CultureInfo.InvariantCulture) ?? "";
+                    var duracionActual = s.DuracionOverride?.ToString() ?? "";
+                    <article class="service-edit-row" data-service-row>
+                        <div class="service-edit-main">
+                            <span class="service-edit-icon"><i class="bi bi-scissors"></i></span>
+                            <div>
+                                <h2>@s.Nombre</h2>
+                                <p>Base: $@s.PrecioBase.ToString("#,##0") · @s.DuracionBase min</p>
+                            </div>
                         </div>
-                        <label class="service-switch">
-                            <input type="checkbox" name="ofrecidos" value="@s.ServicioId" @(s.Ofrecido ? "checked" : "")>
-                            <span>@(s.Ofrecido ? "Activo" : "Inactivo")</span>
+
+                        <label class="status-switch service-row-switch">
+                            <input type="checkbox" name="ofrecidos" value="@s.ServicioId" @(s.Ofrecido ? "checked" : "") data-original="@(s.Ofrecido.ToString().ToLower())" />
+                            <span class="status-switch-track"><span class="status-switch-thumb"></span></span>
+                            <span class="status-switch-text"><span class="is-on">Activo</span><span class="is-off">Inactivo</span></span>
                         </label>
-                    </div>
-                    <div class="row g-2">
-                        <div class="col-sm-7">
-                            <label class="form-label small">Precio propuesto</label>
-                            <div class="input-group">
-                                <span class="input-group-text">$</span>
-                                <input type="text" inputmode="numeric" class="form-control js-money" name="precios[@s.ServicioId]"
-                                       value="@(s.PrecioOverride?.ToString("0", System.Globalization.CultureInfo.InvariantCulture) ?? "")"
-                                       placeholder="@s.PrecioBase.ToString("0", System.Globalization.CultureInfo.InvariantCulture)" />
-                            </div>
-                        </div>
-                        <div class="col-sm-5">
-                            <label class="form-label small">Duracion</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control" name="duraciones[@s.ServicioId]"
-                                       value="@(s.DuracionOverride?.ToString() ?? "")" placeholder="@s.DuracionBase" />
-                                <span class="input-group-text">min</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="small text-muted mt-2"><i class="bi bi-shield-check me-1"></i>Los cambios requieren aprobacion del dueno.</div>
-                </article>
-            }
+
+                        <label class="service-inline-field">
+                            <span><i class="bi bi-currency-dollar"></i> Precio</span>
+                            <input type="text" inputmode="numeric" class="form-control form-control-sm js-money" name="precios[@s.ServicioId]"
+                                   value="@precioActual"
+                                   placeholder="@s.PrecioBase.ToString("0", System.Globalization.CultureInfo.InvariantCulture)"
+                                   data-original="@precioActual" />
+                        </label>
+
+                        <label class="service-inline-field">
+                            <span><i class="bi bi-clock"></i> Min</span>
+                            <input type="number" min="1" class="form-control form-control-sm" name="duraciones[@s.ServicioId]"
+                                   value="@duracionActual" placeholder="@s.DuracionBase" data-original="@duracionActual" />
+                        </label>
+
+                        <button class="btn btn-sm btn-outline-primary service-row-save" type="submit">
+                            <i class="bi bi-send-check"></i>
+                            <span>Guardar</span>
+                        </button>
+                    </article>
+                }
+            </div>
         </div>
-        <button class="btn btn-primary"><i class="bi bi-send-check me-1"></i>Enviar para aprobacion</button>
+
+        <div class="service-edit-footer">
+            <div class="small text-muted"><i class="bi bi-shield-check me-1"></i>Los cambios quedan pendientes de aprobacion del dueno.</div>
+            <button class="btn btn-primary btn-sm"><i class="bi bi-send-check me-1"></i>Enviar cambios</button>
+        </div>
     </form>
+}
+
+@section Scripts {
+<script>
+    (function () {
+        var form = document.getElementById('servicesInlineForm');
+        var pill = document.getElementById('pendingChanges');
+        if (!form || !pill) return;
+
+        function hasChanged(input) {
+            if (input.type === 'checkbox') return String(input.checked) !== input.dataset.original;
+            return (input.value || '') !== (input.dataset.original || '');
+        }
+
+        function refresh() {
+            var changed = false;
+            form.querySelectorAll('[data-service-row]').forEach(function (row) {
+                var rowChanged = Array.from(row.querySelectorAll('input[data-original]')).some(hasChanged);
+                row.classList.toggle('is-dirty', rowChanged);
+                changed = changed || rowChanged;
+            });
+            pill.classList.toggle('d-none', !changed);
+        }
+
+        form.addEventListener('input', refresh);
+        form.addEventListener('change', refresh);
+        refresh();
+    })();
+</script>
 }

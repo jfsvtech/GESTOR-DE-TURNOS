@@ -3,215 +3,193 @@
     ViewData["Title"] = "Reservar turno";
     var slug = ViewData["TenantSlug"] as string;
     var rol = ViewData["UsuarioRol"] as string;
+    var esCliente = rol == "Cliente";
     var slotsUrl = Url.Action("Slots", "Booking", new { slug });
 }
 
-<nav aria-label="breadcrumb" class="small">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a asp-action="Index" asp-route-slug="@slug">Servicios</a></li>
-        <li class="breadcrumb-item active">@Model.EmpleadoNombre</li>
-    </ol>
-</nav>
-
-<h1 class="section-title mb-1">Reserva con @Model.EmpleadoNombre</h1>
-<p class="page-sub mb-4">Elige servicio, dia y un horario disponible.</p>
-
-@if (rol != "Cliente")
-{
-    <div class="alert alert-warning border-0 shadow-sm">
-        <i class="bi bi-info-circle me-1"></i>Mira la disponibilidad libremente. Para confirmar debes
-        <a asp-controller="Account" asp-action="Login" asp-route-slug="@slug">iniciar sesion</a> o
-        <a asp-controller="Account" asp-action="Registro" asp-route-slug="@slug">crear tu cuenta</a>.
-    </div>
-}
-
-<div class="row g-3">
-    <div class="col-lg-5">
-        <div class="card">
-            <div class="card-body">
-                <div class="mb-3">
-                    <label class="form-label">Servicio</label>
-                    <select id="servicio" class="form-select">
-                        @foreach (var s in Model.Servicios)
-                        {
-                            <option value="@s.Id" data-dur="@s.DuracionMinutos" data-precio="@s.Precio" selected="@(s.Id == Model.ServicioId)">
-                                @s.Nombre - @s.DuracionMinutos min - $@s.Precio.ToString("#,##0")
-                            </option>
-                        }
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Fecha</label>
-                    <input id="fecha" type="date" class="form-control" value="@Model.Fecha.ToString("yyyy-MM-dd")"
-                           min="@DateTime.Today.ToString("yyyy-MM-dd")" />
-                </div>
-                <div class="mb-0">
-                    <label class="form-label">Notas (opcional)</label>
-                    <textarea id="notas" class="form-control" rows="2" placeholder="Indicaciones para el profesional"></textarea>
-                </div>
-            </div>
+<div class="booking-app-shell client-booking">
+    <div class="booking-app-head">
+        <div>
+            <span class="booking-kicker"><i class="bi bi-calendar2-check"></i> Reserva online</span>
+            <h1>Reserva con @Model.EmpleadoNombre</h1>
+            <p>Elige servicio, fecha y hora. Sin formularios largos, sin pasos innecesarios.</p>
         </div>
+        <a class="btn btn-outline-secondary" asp-action="Index" asp-route-slug="@slug"><i class="bi bi-arrow-left me-1"></i>Servicios</a>
     </div>
 
-    <div class="col-lg-7">
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <form asp-action="ConfirmarRapida" asp-route-slug="@slug" method="post" id="clientBookingForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="empleadoId" value="@Model.EmpleadoId" />
+        <input type="hidden" name="servicioId" id="ServicioId" value="@Model.ServicioId" />
+        <input type="hidden" name="inicio" id="Inicio" />
+        <input type="hidden" name="notas" id="Notas" />
+
+        <div class="booking-progress">
+            <span class="active" data-step-dot="1">1 Servicio</span>
+            <span data-step-dot="2">2 Fecha</span>
+            <span data-step-dot="3">3 Hora</span>
+            <span data-step-dot="4">4 Confirmar</span>
+        </div>
+
+        <section class="booking-step-card" data-step="1">
+            <div class="booking-step-title">
+                <h2>Servicio</h2>
+                <p>Selecciona lo que quieres reservar.</p>
+            </div>
+            <div class="booking-choice-list compact">
+                @foreach (var s in Model.Servicios)
+                {
+                    <button type="button" class="booking-service-option @(s.Id == Model.ServicioId ? "active" : "")"
+                            data-service-id="@s.Id" data-service-name="@s.Nombre"
+                            data-duration="@s.DuracionMinutos" data-price="@s.Precio.ToString("0", System.Globalization.CultureInfo.InvariantCulture)">
+                        <span class="service-edit-icon"><i class="bi bi-scissors"></i></span>
+                        <span>
+                            <strong>@s.Nombre</strong>
+                            <small>$@s.Precio.ToString("#,##0") · @s.DuracionMinutos min</small>
+                        </span>
+                        <i class="bi bi-check2"></i>
+                    </button>
+                }
+            </div>
+        </section>
+
+        <section class="booking-step-card" data-step="2">
+            <div class="booking-step-title">
+                <h2>Fecha</h2>
+                <p>Elige un dia y cargamos disponibilidad real.</p>
+            </div>
+            <input id="Fecha" type="date" class="form-control booking-date-input" value="@Model.Fecha.ToString("yyyy-MM-dd")"
+                   min="@Model.Fecha.ToString("yyyy-MM-dd")" />
+            <div class="quick-date-strip" id="quickDates"></div>
+        </section>
+
+        <section class="booking-step-card" data-step="3">
+            <div class="booking-step-title">
+                <h2>Hora</h2>
+                <p id="slotHint">Horarios disponibles para el servicio seleccionado.</p>
+            </div>
+            <div id="clientSlots" class="booking-slot-grid"><div class="text-muted">Cargando horarios...</div></div>
+        </section>
+
+        <section class="booking-step-card is-muted" data-step="4">
+            <div class="booking-step-title">
+                <h2>Confirmacion</h2>
+                <p>Revisa el resumen y confirma tu turno.</p>
+            </div>
+
+            @if (!esCliente)
+            {
+                <div class="guest-fields">
                     <div>
-                        <h2 class="h5 mb-1"><i class="bi bi-clock me-1"></i>Horarios disponibles</h2>
-                        <p class="slot-help mb-0">Selecciona una hora disponible. Duracion del servicio: <strong id="duracionActual">--</strong> min.</p>
+                        <label class="form-label">Nombre</label>
+                        <input name="nombre" class="form-control" autocomplete="name" placeholder="Tu nombre" />
                     </div>
-                    <div class="slot-filter" aria-label="Filtrar horarios">
-                        <button type="button" class="slot-filter-btn active" data-slot-filter="all">Todo</button>
-                        <button type="button" class="slot-filter-btn" data-slot-filter="morning">Manana</button>
-                        <button type="button" class="slot-filter-btn" data-slot-filter="afternoon">Tarde</button>
-                        <button type="button" class="slot-filter-btn" data-slot-filter="night">Noche</button>
+                    <div>
+                        <label class="form-label">Telefono</label>
+                        <input name="telefono" class="form-control" autocomplete="tel" placeholder="3001234567" />
                     </div>
                 </div>
-                <div id="slotSummary" class="slot-summary mb-3"></div>
-                <div id="slots" class="slot-grid"><div class="text-muted">Cargando...</div></div>
+            }
 
-                <form id="formReserva" asp-action="Confirmar" asp-route-slug="@slug" method="post" class="d-none mt-3">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="empleadoId" value="@Model.EmpleadoId" />
-                    <input type="hidden" name="servicioId" id="fServicio" />
-                    <input type="hidden" name="inicio" id="fInicio" />
-                    <input type="hidden" name="notas" id="fNotas" />
-                    <div class="booking-confirmation d-flex justify-content-between align-items-center gap-3 p-3">
-                        <span class="fw-semibold"><i class="bi bi-check2-circle me-1 text-success"></i><span id="resumen"></span></span>
-                        <button type="submit" class="btn btn-primary">Confirmar turno</button>
-                    </div>
-                </form>
+            <div class="booking-final-bar">
+                <strong id="clientSummary">Selecciona una hora</strong>
+                <button class="btn btn-primary btn-lg" type="submit" id="clientSubmit" disabled>
+                    <i class="bi bi-check2-circle me-1"></i>Confirmar turno
+                </button>
             </div>
-        </div>
-    </div>
+        </section>
+    </form>
 </div>
 
 @section Scripts {
 <script>
-    const slotsUrl = '@slotsUrl', empleadoId = @Model.EmpleadoId;
-    const $serv = document.getElementById('servicio'), $fecha = document.getElementById('fecha');
-    const $slots = document.getElementById('slots'), $form = document.getElementById('formReserva'), $res = document.getElementById('resumen');
-    const $summary = document.getElementById('slotSummary'), $duracion = document.getElementById('duracionActual');
-    let allSlots = [], selectedFilter = 'all';
+    (function () {
+        const slotsUrl = '@slotsUrl';
+        const empleadoId = @Model.EmpleadoId;
+        const serviceInput = document.getElementById('ServicioId');
+        const startInput = document.getElementById('Inicio');
+        const dateInput = document.getElementById('Fecha');
+        const slots = document.getElementById('clientSlots');
+        const hint = document.getElementById('slotHint');
+        const summary = document.getElementById('clientSummary');
+        const submit = document.getElementById('clientSubmit');
+        let selectedService = null;
 
-    function servicioActual() {
-        const opt = $serv.options[$serv.selectedIndex];
-        return {
-            nombre: opt?.text?.split(' - ')[0]?.trim() || 'Servicio',
-            duracion: Number(opt?.dataset?.dur || 0)
-        };
-    }
-
-    function groupKey(hora) {
-        const h = Number(hora.split(':')[0]);
-        if (h < 12) return 'morning';
-        if (h < 18) return 'afternoon';
-        return 'night';
-    }
-
-    function renderSlots() {
-        const svc = servicioActual();
-        $duracion.textContent = svc.duracion || '--';
-        $slots.innerHTML = '';
-        $summary.innerHTML = '';
-
-        if (!allSlots.length) {
-            $slots.innerHTML = '<div class="slot-empty">No hay horarios disponibles para esta fecha.</div>';
-            return;
+        function selectedServiceButton() {
+            return document.querySelector(`.booking-service-option[data-service-id="${serviceInput.value}"]`) || document.querySelector('.booking-service-option');
         }
 
-        const next = allSlots[0];
-        $summary.innerHTML = `
-            <button type="button" class="recommended-slot-card" data-next-slot>
-                <span class="recommended-badge"><i class="bi bi-stars"></i> Recomendado</span>
-                <strong>${next.hora}</strong>
-                <small>Mas cercano disponible - ${svc.duracion || '--'} min</small>
-            </button>`;
-        $summary.querySelector('[data-next-slot]').addEventListener('click', () => {
-            const escapedInicio = window.CSS?.escape ? CSS.escape(next.inicio) : next.inicio.replace(/"/g, '\\"');
-            const btn = document.querySelector(`#slots .slot-btn[data-inicio="${escapedInicio}"]`);
-            if (btn) sel(next, btn);
-        });
+        function setProgress(step) {
+            document.querySelectorAll('[data-step-dot]').forEach(x => x.classList.toggle('active', Number(x.dataset.stepDot) <= step));
+            document.querySelectorAll('[data-step]').forEach(x => x.classList.toggle('is-muted', Number(x.dataset.step) > step));
+        }
 
-        const groups = [
-            { key: 'morning', titulo: 'Manana', icono: 'bi-sunrise', hint: 'Primeras horas del dia' },
-            { key: 'afternoon', titulo: 'Tarde', icono: 'bi-sun', hint: 'Bloque central de atencion' },
-            { key: 'night', titulo: 'Noche', icono: 'bi-moon', hint: 'Ultimos turnos disponibles' }
-        ];
+        function readService(btn) {
+            selectedService = { id: btn.dataset.serviceId, name: btn.dataset.serviceName, duration: btn.dataset.duration };
+            serviceInput.value = selectedService.id;
+            document.querySelectorAll('.booking-service-option').forEach(x => x.classList.toggle('active', x === btn));
+        }
 
-        groups
-            .filter(g => selectedFilter === 'all' || selectedFilter === g.key)
-            .forEach(g => {
-                const items = allSlots.filter(x => groupKey(x.hora) === g.key);
-                if (!items.length) return;
+        function buildDates() {
+            const wrap = document.getElementById('quickDates');
+            const base = new Date(dateInput.value + 'T00:00:00');
+            wrap.innerHTML = '';
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(base);
+                d.setDate(base.getDate() + i);
+                const iso = d.toISOString().slice(0, 10);
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'quick-date-chip' + (iso === dateInput.value ? ' active' : '');
+                btn.innerHTML = `<strong>${d.toLocaleDateString('es-CO', { weekday: 'short' })}</strong><span>${d.getDate()}</span>`;
+                btn.onclick = () => { dateInput.value = iso; buildDates(); loadSlots(); };
+                wrap.appendChild(btn);
+            }
+        }
 
-                const section = document.createElement('section');
-                section.className = 'slot-band';
-                section.innerHTML = `
-                    <div class="slot-band-head">
-                        <div>
-                            <h3><i class="bi ${g.icono}"></i>${g.titulo}</h3>
-                            <p>${g.hint}</p>
-                        </div>
-                        <span>${items.length} cupos</span>
-                    </div>
-                    <div class="slot-band-grid"></div>`;
-                const grid = section.querySelector('.slot-band-grid');
-
-                items.forEach(s => {
-                    const isNext = s.inicio === next.inicio;
-                    const b = document.createElement('button');
-                    b.type = 'button';
-                    b.className = `slot-btn${isNext ? ' recommended' : ''}`;
-                    b.dataset.inicio = s.inicio;
-                    b.title = `Selecciona ${s.hora} para ${svc.nombre}`;
-                    b.innerHTML = `<span>${s.hora}</span><small>${svc.duracion || '--'} min</small>${isNext ? '<em>Mas cercano</em>' : ''}`;
-                    b.onclick = () => sel(s, b);
-                    grid.appendChild(b);
-                });
-
-                $slots.appendChild(section);
+        async function loadSlots() {
+            startInput.value = '';
+            submit.disabled = true;
+            hint.textContent = `${selectedService.name} · ${selectedService.duration} min`;
+            slots.innerHTML = '<div class="text-muted">Cargando horarios...</div>';
+            const res = await fetch(`${slotsUrl}?empleadoId=${empleadoId}&servicioId=${selectedService.id}&fecha=${dateInput.value}`);
+            const data = await res.json();
+            if (!data.length) {
+                slots.innerHTML = '<div class="slot-empty">No hay horarios disponibles para esta fecha.</div>';
+                return;
+            }
+            slots.innerHTML = '';
+            data.forEach(s => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'booking-slot-btn';
+                btn.textContent = s.hora;
+                btn.onclick = () => {
+                    startInput.value = s.inicio;
+                    document.querySelectorAll('.booking-slot-btn').forEach(x => x.classList.remove('active'));
+                    btn.classList.add('active');
+                    summary.textContent = `${selectedService.name} · ${dateInput.value} · ${s.hora}`;
+                    submit.disabled = false;
+                    setProgress(4);
+                    document.querySelector('[data-step="4"]').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                };
+                slots.appendChild(btn);
             });
-
-        if (!$slots.children.length) {
-            $slots.innerHTML = '<div class="slot-empty">No hay horarios en este rango. Prueba otro bloque del dia.</div>';
+            setProgress(3);
         }
-    }
 
-    async function cargar() {
-        $form.classList.add('d-none');
-        allSlots = [];
-        $summary.innerHTML = '';
-        $slots.innerHTML = '<div class="text-muted">Cargando...</div>';
-        if (!$serv.value || !$fecha.value) { $slots.innerHTML = ''; return; }
-        try {
-            const r = await fetch(`${slotsUrl}?empleadoId=${empleadoId}&servicioId=${$serv.value}&fecha=${$fecha.value}`);
-            allSlots = (await r.json()).sort((a, b) => a.hora.localeCompare(b.hora));
-            renderSlots();
-        } catch { $slots.innerHTML = '<div class="text-danger">Error cargando horarios.</div>'; }
-    }
+        document.querySelectorAll('.booking-service-option').forEach(btn => btn.addEventListener('click', () => {
+            readService(btn);
+            setProgress(2);
+            loadSlots();
+            document.querySelector('[data-step="2"]').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }));
 
-    function sel(s, btn) {
-        document.querySelectorAll('#slots .slot-btn').forEach(x => x.classList.remove('active'));
-        btn.classList.add('active');
-        const svc = servicioActual();
-        document.getElementById('fServicio').value = $serv.value;
-        document.getElementById('fInicio').value = s.inicio;
-        document.getElementById('fNotas').value = document.getElementById('notas').value;
-        $res.textContent = `${svc.nombre} - ${$fecha.value} - ${s.hora}`;
-        $form.classList.remove('d-none');
-        $form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-
-    document.getElementById('notas').addEventListener('input', e => document.getElementById('fNotas').value = e.target.value);
-    document.querySelectorAll('[data-slot-filter]').forEach(btn => btn.addEventListener('click', () => {
-        selectedFilter = btn.dataset.slotFilter;
-        document.querySelectorAll('[data-slot-filter]').forEach(x => x.classList.toggle('active', x === btn));
-        renderSlots();
-    }));
-    $serv.addEventListener('change', cargar);
-    $fecha.addEventListener('change', cargar);
-    cargar();
+        dateInput.addEventListener('change', () => { buildDates(); loadSlots(); });
+        readService(selectedServiceButton());
+        buildDates();
+        setProgress(2);
+        loadSlots();
+    })();
 </script>
 }

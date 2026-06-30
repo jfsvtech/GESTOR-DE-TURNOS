@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using GeneradorTurnos.Auth;
 using GeneradorTurnos.Models;
 using GeneradorTurnos.Repositories;
@@ -141,6 +142,42 @@ public class BookingController : TenantBaseController
     }
 
     // Tras iniciar sesión, completa la reserva que quedó pendiente.
+    [HttpPost("reservar/rapida")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ConfirmarRapida(int empleadoId, int servicioId, string inicio, string? nombre, string? telefono, string? notas)
+    {
+        if (UsuarioPerteneceAlTenant() && CurrentRol == Rol.Cliente)
+        {
+            var res = await IntentarReservarAsync(empleadoId, servicioId, inicio, notas);
+            TempData[res.Ok ? "Ok" : "Error"] = res.Ok ? "Turno reservado correctamente." : res.Error;
+            return res.Ok
+                ? RedirectToAction(nameof(MisTurnos), new { slug = Slug })
+                : RedirectToAction(nameof(Reservar), new { slug = Slug, empleadoId, servicioId });
+        }
+
+        if (string.IsNullOrWhiteSpace(nombre) || string.IsNullOrWhiteSpace(telefono))
+        {
+            TempData["Error"] = "Ingresa nombre y telefono para confirmar.";
+            return RedirectToAction(nameof(Reservar), new { slug = Slug, empleadoId, servicioId });
+        }
+
+        if (!DateTime.TryParseExact(inicio, "yyyy-MM-ddTHH:mm:ss", CultureInfo.InvariantCulture,
+                DateTimeStyles.None, out var inicioDt))
+        {
+            TempData["Error"] = "Horario invalido. Intenta de nuevo.";
+            return RedirectToAction(nameof(Reservar), new { slug = Slug, empleadoId, servicioId });
+        }
+
+        var cedulaTemporal = Regex.Replace(telefono, @"\D+", "");
+        if (string.IsNullOrWhiteSpace(cedulaTemporal)) cedulaTemporal = telefono.Trim();
+        var cliente = await _usuarios.UpsertClienteAsync(TenantId, cedulaTemporal, nombre.Trim(), telefono.Trim());
+        var resultado = await _turnoService.ReservarAsync(TenantId, cliente.Id, empleadoId, servicioId, inicioDt, notas);
+        TempData[resultado.Ok ? "Ok" : "Error"] = resultado.Ok ? "Turno reservado correctamente." : resultado.Error;
+        return resultado.Ok
+            ? RedirectToAction(nameof(Index), new { slug = Slug })
+            : RedirectToAction(nameof(Reservar), new { slug = Slug, empleadoId, servicioId });
+    }
+
     [HttpGet("reanudar-reserva")]
     public async Task<IActionResult> ReanudarReserva()
     {

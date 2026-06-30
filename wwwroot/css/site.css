@@ -5771,6 +5771,182 @@ canvas {
     width: min(420px, 100%);
 }
 
+.company-management-panel {
+    overflow: visible;
+}
+
+.company-list {
+    display: grid;
+}
+
+.company-row-card {
+    display: grid;
+    grid-template-columns: minmax(260px, 1.5fr) minmax(170px, .95fr) minmax(180px, .9fr) minmax(115px, .55fr) auto;
+    align-items: center;
+    gap: 1rem;
+    padding: .95rem 1rem;
+    border-top: 1px solid var(--border);
+    background: var(--card-bg);
+    transition: background .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.company-row-card:first-child {
+    border-top: 0;
+}
+
+.company-row-card:hover {
+    background: color-mix(in srgb, var(--primary) 5%, var(--card-bg));
+    box-shadow: inset 3px 0 0 color-mix(in srgb, var(--primary) 85%, transparent);
+}
+
+.company-row-main,
+.company-actions {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+}
+
+.company-row-main {
+    min-width: 0;
+}
+
+.company-row-title {
+    min-width: 0;
+}
+
+.company-row-title h3 {
+    margin: 0;
+    color: var(--text-main);
+    font-size: .98rem;
+    font-weight: 950;
+}
+
+.company-row-title a {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    color: var(--text-muted);
+    font-size: .78rem;
+    font-weight: 750;
+    text-overflow: ellipsis;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.company-row-title a:hover {
+    color: var(--primary);
+}
+
+.company-status,
+.company-subscription,
+.company-plan {
+    display: inline-flex;
+    align-items: center;
+    gap: .32rem;
+    width: fit-content;
+    border-radius: 999px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.company-status {
+    padding: .28rem .55rem;
+    font-size: .72rem;
+    font-weight: 900;
+}
+
+.company-status.is-active {
+    background: color-mix(in srgb, var(--success) 12%, transparent);
+    color: var(--success);
+}
+
+.company-status.is-paused {
+    background: color-mix(in srgb, var(--warning) 13%, transparent);
+    color: var(--warning);
+}
+
+.company-plan-block,
+.company-usage-block,
+.company-sales-block {
+    display: grid;
+    gap: .28rem;
+}
+
+.company-plan {
+    padding: .28rem .58rem;
+    background: color-mix(in srgb, var(--primary) 10%, var(--bg-secondary));
+    color: var(--primary);
+    font-size: .74rem;
+    font-weight: 950;
+}
+
+.company-subscription {
+    color: var(--text-main);
+    font-size: .82rem;
+    font-weight: 850;
+}
+
+.company-subscription.is-success {
+    color: var(--success);
+}
+
+.company-subscription.is-warning {
+    color: var(--warning);
+}
+
+.company-subscription.is-danger {
+    color: var(--danger);
+}
+
+.company-plan-block small,
+.company-usage-block small,
+.company-sales-block small {
+    color: var(--text-muted);
+    font-size: .75rem;
+}
+
+.company-usage-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .7rem;
+    color: var(--text-main);
+    font-size: .8rem;
+}
+
+.company-usage-top span {
+    color: var(--text-muted);
+    font-weight: 800;
+}
+
+.company-sales-block strong {
+    color: var(--text-main);
+    font-size: .98rem;
+    font-weight: 950;
+}
+
+.company-actions {
+    justify-content: flex-end;
+}
+
+.btn-icon-soft {
+    width: 34px;
+    height: 34px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    color: var(--text-main);
+}
+
+.btn-icon-soft:hover,
+.btn-icon-soft:focus {
+    border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
+    background: color-mix(in srgb, var(--primary) 8%, var(--bg-secondary));
+    color: var(--primary);
+}
+
 .saas-table {
     --bs-table-bg: var(--card-bg);
     --bs-table-color: var(--text-main);
@@ -6180,6 +6356,371 @@ canvas {
     color: var(--primary);
 }
 
+.service-change-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .45rem .75rem;
+    border: 1px solid color-mix(in srgb, var(--warning) 34%, var(--border));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--warning) 12%, var(--card-bg));
+    color: var(--warning);
+    font-size: .82rem;
+    font-weight: 900;
+}
+
+.service-edit-shell {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--card-bg);
+}
+
+.service-edit-head,
+.service-edit-row {
+    display: grid;
+    grid-template-columns: minmax(220px, 1.4fr) 150px minmax(150px, .8fr) minmax(130px, .65fr) 104px;
+    align-items: center;
+    gap: .75rem;
+}
+
+.service-edit-head {
+    padding: .7rem .9rem;
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+}
+
+.service-edit-list {
+    display: grid;
+}
+
+.service-edit-row {
+    padding: .72rem .9rem;
+    border-top: 1px solid var(--border);
+    transition: background .16s ease, box-shadow .16s ease;
+}
+
+.service-edit-row:hover {
+    background: color-mix(in srgb, var(--primary) 5%, var(--card-bg));
+}
+
+.service-edit-row.is-dirty {
+    background: color-mix(in srgb, var(--warning) 8%, var(--card-bg));
+    box-shadow: inset 3px 0 0 var(--warning);
+}
+
+.service-edit-main {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    min-width: 0;
+}
+
+.service-edit-icon {
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 11px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 10%, var(--bg-secondary));
+}
+
+.service-edit-main h2 {
+    margin: 0;
+    color: var(--text-main);
+    font-size: .96rem;
+    font-weight: 900;
+}
+
+.service-edit-main p {
+    margin: .1rem 0 0;
+    color: var(--text-muted);
+    font-size: .78rem;
+}
+
+.service-inline-field {
+    display: grid;
+    gap: .2rem;
+}
+
+.service-inline-field span {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    color: var(--text-muted);
+    font-size: .72rem;
+    font-weight: 850;
+}
+
+.service-inline-field .form-control {
+    min-height: 34px;
+}
+
+.service-row-switch {
+    margin: 0;
+}
+
+.service-row-save {
+    justify-self: end;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+}
+
+.service-edit-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .85rem 0 0;
+}
+
+.booking-app-shell {
+    max-width: 980px;
+    margin: 0 auto;
+}
+
+.booking-app-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.booking-app-head h1 {
+    margin: .35rem 0 .25rem;
+    color: var(--text-main);
+    font-size: clamp(1.65rem, 3vw, 2.35rem);
+    font-weight: 950;
+    letter-spacing: 0;
+}
+
+.booking-app-head p {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.booking-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .32rem .65rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--primary) 11%, var(--bg-secondary));
+    color: var(--primary);
+    font-size: .78rem;
+    font-weight: 950;
+}
+
+.booking-progress {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .45rem;
+    margin-bottom: .85rem;
+}
+
+.booking-progress span {
+    min-height: 34px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    font-size: .78rem;
+    font-weight: 900;
+}
+
+.booking-progress span.active {
+    border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
+    background: color-mix(in srgb, var(--primary) 10%, var(--card-bg));
+    color: var(--primary);
+}
+
+.booking-step-card {
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 1rem;
+    margin-bottom: .85rem;
+    background: var(--card-bg);
+    box-shadow: 0 16px 38px rgba(15, 23, 42, .06);
+    transition: opacity .18s ease, transform .18s ease, border-color .18s ease;
+}
+
+.booking-step-card.is-muted {
+    opacity: .72;
+}
+
+.booking-step-title {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: .8rem;
+}
+
+.booking-step-title h2 {
+    margin: 0;
+    color: var(--text-main);
+    font-size: 1rem;
+    font-weight: 950;
+}
+
+.booking-step-title p {
+    margin: .15rem 0 0;
+    color: var(--text-muted);
+    font-size: .86rem;
+}
+
+.booking-choice-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: .65rem;
+}
+
+.booking-choice-list.compact {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.booking-service-option {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: .75rem;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: .78rem;
+    background: var(--bg-secondary);
+    color: var(--text-main);
+    text-align: left;
+    transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.booking-service-option strong,
+.booking-service-option small {
+    display: block;
+}
+
+.booking-service-option strong {
+    font-size: .95rem;
+    font-weight: 950;
+}
+
+.booking-service-option small {
+    color: var(--text-muted);
+    font-size: .8rem;
+}
+
+.booking-service-option:hover,
+.booking-service-option.active {
+    border-color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 9%, var(--card-bg));
+    transform: translateY(-1px);
+}
+
+.booking-date-input {
+    max-width: 260px;
+    min-height: 44px;
+}
+
+.quick-date-strip {
+    display: flex;
+    gap: .5rem;
+    padding: .75rem 0 .1rem;
+    overflow-x: auto;
+}
+
+.quick-date-chip {
+    min-width: 64px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: .55rem .65rem;
+    background: var(--bg-secondary);
+    color: var(--text-main);
+    text-align: center;
+    transition: border-color .16s ease, background .16s ease;
+}
+
+.quick-date-chip strong,
+.quick-date-chip span {
+    display: block;
+}
+
+.quick-date-chip strong {
+    color: var(--text-muted);
+    font-size: .72rem;
+    text-transform: capitalize;
+}
+
+.quick-date-chip span {
+    font-size: 1rem;
+    font-weight: 950;
+}
+
+.quick-date-chip.active {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: #fff;
+}
+
+.quick-date-chip.active strong {
+    color: rgba(255, 255, 255, .78);
+}
+
+.booking-slot-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
+    gap: .55rem;
+}
+
+.booking-slot-btn {
+    min-height: 46px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--bg-secondary);
+    color: var(--text-main);
+    font-weight: 950;
+    transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.booking-slot-btn:hover,
+.booking-slot-btn.active {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.guest-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .75rem;
+    margin-bottom: .85rem;
+}
+
+.booking-final-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .85rem;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--bg-secondary);
+}
+
+.booking-final-bar strong {
+    color: var(--text-main);
+}
+
 /* --- Calendario (FullCalendar) prev/next y toolbar --- */
 .fc .fc-button .fc-icon {
     font-size: 1.3em;
@@ -6277,6 +6818,75 @@ canvas {
     .saas-alert-grid {
         grid-template-columns: 1fr;
     }
+
+    .company-row-card {
+        grid-template-columns: 1fr 1fr;
+        align-items: start;
+    }
+
+    .company-row-main,
+    .company-actions {
+        grid-column: 1 / -1;
+    }
+
+    .company-actions {
+        justify-content: flex-start;
+    }
+
+    .service-edit-head {
+        display: none;
+    }
+
+    .service-edit-row {
+        grid-template-columns: 1fr;
+        gap: .65rem;
+        align-items: stretch;
+    }
+
+    .service-row-save {
+        justify-self: stretch;
+        justify-content: center;
+    }
+
+    .service-edit-footer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .service-edit-footer .btn {
+        width: 100%;
+    }
+
+    .booking-app-head {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .booking-progress {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .booking-step-title {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .booking-date-input {
+        max-width: 100%;
+    }
+
+    .guest-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .booking-final-bar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .booking-final-bar .btn {
+        width: 100%;
+    }
 }
 
 @media (max-width: 575.98px) {
@@ -6302,6 +6912,21 @@ canvas {
         flex-direction: column;
     }
 
+    .company-row-card {
+        grid-template-columns: 1fr;
+        gap: .75rem;
+        padding: 1rem;
+    }
+
+    .company-actions {
+        align-items: stretch;
+        justify-content: space-between;
+    }
+
+    .company-actions .btn-primary {
+        flex: 1;
+    }
+
     .saas-panel-toolbar {
         align-items: stretch;
         flex-direction: column;
@@ -6314,5 +6939,14 @@ canvas {
     .status-switch {
         width: 100%;
         justify-content: space-between;
+    }
+
+    .booking-choice-list,
+    .booking-choice-list.compact {
+        grid-template-columns: 1fr;
+    }
+
+    .booking-slot-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 }

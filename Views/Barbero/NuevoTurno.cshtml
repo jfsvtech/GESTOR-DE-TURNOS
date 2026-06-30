@@ -3,67 +3,199 @@
     ViewData["Title"] = "Nuevo turno";
     var slug = ViewData["TenantSlug"] as string;
     var servicios = ViewBag.Servicios as List<Servicio> ?? new List<Servicio>();
+    var empleadoId = (int)(ViewData["EmpleadoId"] ?? 0);
+    var slotsUrl = Url.Action("Slots", "Booking", new { slug });
 }
 
-<h1 class="section-title mb-1">Nuevo turno (manual)</h1>
-<p class="page-sub mb-4">Agenda a un cliente walk-in. Puedes usar horarios fuera de tu disponibilidad publicada.</p>
+<div class="booking-app-shell">
+    <div class="booking-app-head">
+        <div>
+            <span class="booking-kicker"><i class="bi bi-lightning-charge"></i> Turno manual</span>
+            <h1>Agenda en segundos</h1>
+            <p>Selecciona servicio, fecha y hora disponible. Los datos del cliente van al final.</p>
+        </div>
+        <a class="btn btn-outline-secondary" asp-action="Agenda" asp-route-slug="@slug"><i class="bi bi-arrow-left me-1"></i>Agenda</a>
+    </div>
 
-<div class="row justify-content-center">
-    <div class="col-lg-7">
-        <div class="card"><div class="card-body">
-            <form asp-action="NuevoTurno" asp-route-slug="@slug" method="post">
-                @Html.AntiForgeryToken()
-                <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+    @if (servicios.Count == 0)
+    {
+        <div class="alert alert-info border-0 shadow-sm">No tienes servicios activos para agendar.</div>
+    }
+    else
+    {
+        <form asp-action="NuevoTurno" asp-route-slug="@slug" method="post" id="manualBookingForm">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+            <input asp-for="ServicioId" type="hidden" id="ServicioId" />
+            <input asp-for="Hora" type="hidden" id="Hora" />
 
-                <div class="mb-3">
-                    <label class="form-label">Servicio</label>
-                    <select asp-for="ServicioId" class="form-select">
-                        @foreach (var s in servicios)
-                        {
-                            <option value="@s.Id">@s.Nombre — @s.DuracionMinutos min — $@s.Precio.ToString("#,##0")</option>
-                        }
-                    </select>
+            <div class="booking-progress">
+                <span class="active" data-step-dot="1">1 Servicio</span>
+                <span data-step-dot="2">2 Fecha</span>
+                <span data-step-dot="3">3 Hora</span>
+                <span data-step-dot="4">4 Cliente</span>
+            </div>
+
+            <section class="booking-step-card" data-step="1">
+                <div class="booking-step-title">
+                    <h2>Elige servicio</h2>
+                    <p>Tap sobre el servicio para continuar.</p>
                 </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="Fecha" class="form-label">Fecha</label>
-                        <input asp-for="Fecha" type="date" class="form-control" value="@Model.Fecha.ToString("yyyy-MM-dd")" />
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="Hora" class="form-label"></label>
-                        <input asp-for="Hora" type="time" class="form-control" />
-                    </div>
+                <div class="booking-choice-list">
+                    @foreach (var s in servicios)
+                    {
+                        <button type="button" class="booking-service-option" data-service-id="@s.Id" data-service-name="@s.Nombre" data-duration="@s.DuracionMinutos" data-price="@s.Precio.ToString("0", System.Globalization.CultureInfo.InvariantCulture)">
+                            <span class="service-edit-icon"><i class="bi bi-scissors"></i></span>
+                            <span>
+                                <strong>@s.Nombre</strong>
+                                <small>$@s.Precio.ToString("#,##0") · @s.DuracionMinutos min</small>
+                            </span>
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    }
                 </div>
-                <hr />
-                <h2 class="h6 text-muted">Datos del cliente</h2>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
+            </section>
+
+            <section class="booking-step-card is-muted" data-step="2">
+                <div class="booking-step-title">
+                    <h2>Selecciona fecha</h2>
+                    <p>Mostramos horarios reales segun disponibilidad.</p>
+                </div>
+                <input asp-for="Fecha" id="Fecha" type="date" class="form-control booking-date-input" value="@Model.Fecha.ToString("yyyy-MM-dd")" min="@Model.Fecha.ToString("yyyy-MM-dd")" />
+                <div class="quick-date-strip" id="quickDates"></div>
+            </section>
+
+            <section class="booking-step-card is-muted" data-step="3">
+                <div class="booking-step-title">
+                    <h2>Hora disponible</h2>
+                    <p id="slotHint">Primero selecciona un servicio.</p>
+                </div>
+                <div id="manualSlots" class="booking-slot-grid"><div class="text-muted">Sin servicio seleccionado.</div></div>
+            </section>
+
+            <section class="booking-step-card is-muted" data-step="4">
+                <div class="booking-step-title">
+                    <h2>Datos del cliente</h2>
+                    <p>Solo lo necesario para identificarlo y contactarlo.</p>
+                </div>
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <label asp-for="ClienteNombre" class="form-label"></label>
+                        <input asp-for="ClienteNombre" class="form-control" autocomplete="name" />
+                        <span asp-validation-for="ClienteNombre" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="ClienteTelefono" class="form-label"></label>
+                        <input asp-for="ClienteTelefono" class="form-control" autocomplete="tel" />
+                        <span asp-validation-for="ClienteTelefono" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
                         <label asp-for="ClienteCedula" class="form-label"></label>
                         <input asp-for="ClienteCedula" class="form-control" />
                         <span asp-validation-for="ClienteCedula" class="text-danger small"></span>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="ClienteNombre" class="form-label"></label>
-                        <input asp-for="ClienteNombre" class="form-control" />
-                        <span asp-validation-for="ClienteNombre" class="text-danger small"></span>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="ClienteTelefono" class="form-label"></label>
-                        <input asp-for="ClienteTelefono" class="form-control" />
-                        <span asp-validation-for="ClienteTelefono" class="text-danger small"></span>
-                    </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-12">
                         <label asp-for="Notas" class="form-label"></label>
-                        <input asp-for="Notas" class="form-control" />
+                        <input asp-for="Notas" class="form-control" placeholder="Opcional" />
                     </div>
                 </div>
-                <button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Agendar turno</button>
-                <a class="btn btn-link" asp-action="Agenda" asp-route-slug="@slug">Cancelar</a>
-            </form>
-        </div></div>
-    </div>
+                <div class="booking-final-bar">
+                    <strong id="manualSummary">Selecciona servicio y hora</strong>
+                    <button class="btn btn-primary btn-lg" type="submit" id="manualSubmit" disabled><i class="bi bi-check2-circle me-1"></i>Confirmar turno</button>
+                </div>
+            </section>
+        </form>
+    }
 </div>
 
-@section Scripts { <partial name="_ValidationScriptsPartial" /> }
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+<script>
+    (function () {
+        const slotsUrl = '@slotsUrl';
+        const empleadoId = @empleadoId;
+        const serviceInput = document.getElementById('ServicioId');
+        const hourInput = document.getElementById('Hora');
+        const dateInput = document.getElementById('Fecha');
+        const slots = document.getElementById('manualSlots');
+        const hint = document.getElementById('slotHint');
+        const summary = document.getElementById('manualSummary');
+        const submit = document.getElementById('manualSubmit');
+        let selectedService = null;
+        let selectedSlot = null;
+
+        function setProgress(step) {
+            document.querySelectorAll('[data-step-dot]').forEach(x => x.classList.toggle('active', Number(x.dataset.stepDot) <= step));
+            document.querySelectorAll('[data-step]').forEach(x => x.classList.toggle('is-muted', Number(x.dataset.step) > step));
+        }
+
+        function buildDates() {
+            const wrap = document.getElementById('quickDates');
+            const base = new Date(dateInput.value + 'T00:00:00');
+            wrap.innerHTML = '';
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(base);
+                d.setDate(base.getDate() + i);
+                const iso = d.toISOString().slice(0, 10);
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'quick-date-chip' + (iso === dateInput.value ? ' active' : '');
+                btn.innerHTML = `<strong>${d.toLocaleDateString('es-CO', { weekday: 'short' })}</strong><span>${d.getDate()}</span>`;
+                btn.onclick = () => { dateInput.value = iso; buildDates(); loadSlots(); };
+                wrap.appendChild(btn);
+            }
+        }
+
+        async function loadSlots() {
+            selectedSlot = null;
+            hourInput.value = '';
+            submit.disabled = true;
+            if (!selectedService) return;
+            hint.textContent = `${selectedService.name} · ${selectedService.duration} min`;
+            slots.innerHTML = '<div class="text-muted">Cargando horarios...</div>';
+            const res = await fetch(`${slotsUrl}?empleadoId=${empleadoId}&servicioId=${selectedService.id}&fecha=${dateInput.value}`);
+            const data = await res.json();
+            if (!data.length) {
+                slots.innerHTML = '<div class="slot-empty">No hay horarios disponibles para esta fecha.</div>';
+                return;
+            }
+            slots.innerHTML = '';
+            data.forEach(s => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'booking-slot-btn';
+                btn.textContent = s.hora;
+                btn.onclick = () => {
+                    selectedSlot = s;
+                    hourInput.value = s.hora;
+                    document.querySelectorAll('.booking-slot-btn').forEach(x => x.classList.remove('active'));
+                    btn.classList.add('active');
+                    summary.textContent = `${selectedService.name} · ${dateInput.value} · ${s.hora}`;
+                    submit.disabled = false;
+                    setProgress(4);
+                    document.querySelector('[data-step="4"]').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                };
+                slots.appendChild(btn);
+            });
+            setProgress(3);
+        }
+
+        document.querySelectorAll('[data-service-id]').forEach(btn => btn.addEventListener('click', () => {
+            selectedService = {
+                id: btn.dataset.serviceId,
+                name: btn.dataset.serviceName,
+                duration: btn.dataset.duration
+            };
+            serviceInput.value = selectedService.id;
+            document.querySelectorAll('[data-service-id]').forEach(x => x.classList.toggle('active', x === btn));
+            setProgress(2);
+            loadSlots();
+            document.querySelector('[data-step="2"]').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }));
+
+        dateInput.addEventListener('change', () => { buildDates(); loadSlots(); });
+        buildDates();
+        setProgress(1);
+    })();
+</script>
+}

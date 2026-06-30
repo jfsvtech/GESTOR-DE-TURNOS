@@ -276,7 +276,8 @@ public class BarberoController : TenantBaseController
     {
         if (GuardTenant() is { } r) return r;
         ViewBag.Servicios = await _servicios.GetByEmpleadoAsync(TenantId, CurrentUserId);
-        return View(new ReservaManualVm());
+        ViewData["EmpleadoId"] = CurrentUserId;
+        return View(new ReservaManualVm { Fecha = TenantTime.Today(Tenant.Current) });
     }
 
     [HttpPost("nuevo-turno")]
@@ -290,11 +291,13 @@ public class BarberoController : TenantBaseController
         {
             ModelState.AddModelError("", "Revisa el servicio y la hora.");
             ViewBag.Servicios = await _servicios.GetByEmpleadoAsync(TenantId, CurrentUserId);
+            ViewData["EmpleadoId"] = CurrentUserId;
             return View(vm);
         }
         if (!ModelState.IsValid)
         {
             ViewBag.Servicios = await _servicios.GetByEmpleadoAsync(TenantId, CurrentUserId);
+            ViewData["EmpleadoId"] = CurrentUserId;
             return View(vm);
         }
 
@@ -309,6 +312,7 @@ public class BarberoController : TenantBaseController
         {
             ModelState.AddModelError("", res.Error!);
             ViewBag.Servicios = await _servicios.GetByEmpleadoAsync(TenantId, CurrentUserId);
+            ViewData["EmpleadoId"] = CurrentUserId;
             return View(vm);
         }
 

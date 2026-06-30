@@ -62,14 +62,14 @@
     </div>
     <div class="saas-alert-card">
         <i class="bi bi-pause-circle"></i>
-        <div><strong>@empresasSuspendidas suspendidas</strong><small>Empresas inactivas</small></div>
+        <div><strong>@empresasSuspendidas pausadas</strong><small>Empresas sin operacion activa</small></div>
     </div>
 </section>
 
 <div class="section-heading">
     <div>
-        <h2 class="section-title mb-1">Empresas</h2>
-        <p class="page-sub mb-0">Controla limites, estado, suscripcion y acceso de cada negocio.</p>
+        <h2 class="section-title mb-1">Gestion de empresas</h2>
+        <p class="page-sub mb-0">Vista rapida para revisar estado, plan, uso y ventas sin mezclar edicion con datos.</p>
     </div>
 </div>
 
@@ -84,82 +84,117 @@
 }
 else
 {
-    <section class="saas-list-panel">
+    <section class="saas-list-panel company-management-panel">
         <div class="saas-list-toolbar">
             <div class="input-icon saas-search">
                 <i class="bi bi-search"></i>
-                <input class="form-control" type="search" placeholder="Buscar empresa, slug o plan" data-company-filter />
+                <input class="form-control" type="search" placeholder="Buscar empresa, slug, plan o estado" data-company-filter />
             </div>
             <a class="btn btn-primary" asp-action="Nuevo"><i class="bi bi-plus-lg me-1"></i>Nuevo negocio</a>
         </div>
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0 saas-table">
-                <thead>
-                    <tr>
-                        <th>Empresa</th>
-                        <th>Estado</th>
-                        <th>Plan</th>
-                        <th>Suscripcion</th>
-                        <th>Vence</th>
-                        <th>Usuarios</th>
-                        <th>Ventas</th>
-                        <th class="text-end">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-        @foreach (var t in Model.Empresas)
-        {
-            var pct = t.MaxUsuarios == 0 ? 0 : Math.Min(100, (int)Math.Round(t.Trabajadores * 100m / t.MaxUsuarios));
-            var vence = t.SuscripcionVencimiento?.ToString("dd/MM/yyyy") ?? "Sin vencimiento";
-            var estadoClase = t.Activo ? "success" : "secondary";
-            var inicial = string.IsNullOrWhiteSpace(t.Nombre) ? "?" : t.Nombre.Trim()[0].ToString().ToUpperInvariant();
-            var negocioUrl = string.IsNullOrWhiteSpace(baseDomain) ? $"/{t.Slug}" : $"https://{t.Slug}.{baseDomain}/";
-            <tr data-company-row data-search="@($"{t.Nombre} {t.Slug} {t.Plan} {t.EstadoSuscripcion}".ToLowerInvariant())">
-                <td>
-                    <div class="d-flex align-items-center gap-2">
+
+        <div class="company-list">
+            @foreach (var t in Model.Empresas)
+            {
+                var pct = t.MaxUsuarios == 0 ? 0 : Math.Min(100, (int)Math.Round(t.Trabajadores * 100m / t.MaxUsuarios));
+                var vence = t.SuscripcionVencimiento?.ToString("dd/MM/yyyy") ?? "Sin vencimiento";
+                var inicial = string.IsNullOrWhiteSpace(t.Nombre) ? "?" : t.Nombre.Trim()[0].ToString().ToUpperInvariant();
+                var negocioUrl = string.IsNullOrWhiteSpace(baseDomain) ? $"/{t.Slug}" : $"https://{t.Slug}.{baseDomain}/";
+                var estadoSuscripcion = string.IsNullOrWhiteSpace(t.EstadoSuscripcion) ? "Sin estado" : t.EstadoSuscripcion;
+                var estadoPagoClass = estadoSuscripcion.Equals("Vencido", StringComparison.OrdinalIgnoreCase)
+                    ? "is-danger"
+                    : estadoSuscripcion.Equals("Suspendido", StringComparison.OrdinalIgnoreCase) ? "is-warning" : "is-success";
+
+                <article class="company-row-card" data-company-row data-search="@($"{t.Nombre} {t.Slug} {t.Plan} {t.EstadoSuscripcion}".ToLowerInvariant())">
+                    <div class="company-row-main">
                         <span class="saas-company-logo">@inicial</span>
-                        <div>
-                            <div class="fw-bold">@t.Nombre</div>
-                            <a class="small fw-semibold text-decoration-none" href="@negocioUrl" target="_blank" rel="noopener">@negocioUrl</a>
+                        <div class="company-row-title">
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <h3>@t.Nombre</h3>
+                                <span class="company-status @(t.Activo ? "is-active" : "is-paused")">
+                                    <i class="bi @(t.Activo ? "bi-check-circle" : "bi-pause-circle")"></i>
+                                    @(t.Activo ? "Activa" : "Pausada")
+                                </span>
+                            </div>
+                            <a href="@negocioUrl" target="_blank" rel="noopener">@negocioUrl</a>
                         </div>
                     </div>
-                </td>
-                <td><span class="badge bg-@estadoClase">@(t.Activo ? "Activa" : "Suspendida")</span></td>
-                <td>
-                    <strong>@t.Plan</strong>
-                    <div class="small text-muted">@t.CicloSuscripcion - @t.EstadoSuscripcion</div>
-                </td>
-                <td>$@t.ValorSuscripcion.ToString("#,##0")</td>
-                <td>@vence</td>
-                <td style="min-width:190px">
-                    <div class="d-flex justify-content-between small fw-bold">
-                        <span>@t.Trabajadores / @t.MaxUsuarios trabajadores</span>
-                        <span>@pct%</span>
+
+                    <div class="company-plan-block">
+                        <span class="company-plan">@t.Plan</span>
+                        <span class="company-subscription @estadoPagoClass">@t.CicloSuscripcion · @estadoSuscripcion</span>
+                        <small><i class="bi bi-calendar2-event"></i> Vence @vence</small>
                     </div>
-                    <div class="progress progress-thin my-2"><div class="progress-bar" style="width:@pct%"></div></div>
-                    <form asp-action="CambiarLimite" asp-route-id="@t.Id" method="post" class="d-flex gap-2">
-                        @Html.AntiForgeryToken()
-                        <input class="form-control form-control-sm" type="number" min="1" name="maxUsuarios" value="@t.MaxUsuarios" aria-label="Limite de trabajadores" />
-                        <button class="btn btn-sm btn-outline-primary" title="Guardar limite"><i class="bi bi-check-lg"></i></button>
-                    </form>
-                    <div class="small text-muted mt-1">@t.Clientes clientes</div>
-                </td>
-                <td><strong>$@t.Ventas.ToString("#,##0")</strong><div class="small text-muted">@t.Turnos turnos</div></td>
-                <td class="text-end">
-                    <div class="d-inline-flex gap-2 flex-wrap justify-content-end">
-                        <a class="btn btn-sm btn-primary" asp-action="Empresa" asp-route-id="@t.Id"><i class="bi bi-sliders me-1"></i>Gestionar</a>
-                        <a class="btn btn-sm btn-outline-primary" href="@negocioUrl" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right me-1"></i>Entrar</a>
-                        <form asp-action="CambiarEstado" asp-route-id="@t.Id" method="post">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="activo" value="@((!t.Activo).ToString().ToLower())" />
-                            <button class="btn btn-sm @(t.Activo ? "btn-outline-secondary" : "btn-outline-success")">@(t.Activo ? "Pausar" : "Activar")</button>
-                        </form>
+
+                    <div class="company-usage-block">
+                        <div class="company-usage-top">
+                            <strong>@t.Trabajadores/@t.MaxUsuarios</strong>
+                            <span>@pct%</span>
+                        </div>
+                        <div class="progress progress-thin"><div class="progress-bar" style="width:@pct%"></div></div>
+                        <small>@t.Clientes clientes</small>
                     </div>
-                </td>
-            </tr>
-        }
-                </tbody>
-            </table>
+
+                    <div class="company-sales-block">
+                        <strong>$@t.Ventas.ToString("#,##0")</strong>
+                        <small>@t.Turnos turnos</small>
+                    </div>
+
+                    <div class="company-actions">
+                        <a class="btn btn-sm btn-primary" asp-action="Empresa" asp-route-id="@t.Id">
+                            <i class="bi bi-sliders me-1"></i>Gestionar
+                        </a>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-icon-soft" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Mas acciones">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="@negocioUrl" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-right me-2"></i>Entrar</a></li>
+                                <li><button class="dropdown-item" type="button" data-bs-toggle="modal" data-bs-target="#limiteModal@(t.Id)"><i class="bi bi-people me-2"></i>Editar limite</button></li>
+                                <li><hr class="dropdown-divider" /></li>
+                                <li>
+                                    <form asp-action="CambiarEstado" asp-route-id="@t.Id" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="activo" value="@((!t.Activo).ToString().ToLower())" />
+                                        <button class="dropdown-item @(t.Activo ? "text-warning" : "text-success")">
+                                            <i class="bi @(t.Activo ? "bi-pause-circle" : "bi-play-circle") me-2"></i>@(t.Activo ? "Pausar" : "Activar")
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </article>
+            }
         </div>
     </section>
+
+    @foreach (var t in Model.Empresas)
+    {
+        <div class="modal fade saas-action-modal" id="limiteModal@(t.Id)" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form asp-action="CambiarLimite" asp-route-id="@t.Id" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="modal-header">
+                            <div>
+                                <span class="modal-kicker"><i class="bi bi-people me-1"></i>Limite</span>
+                                <h5 class="modal-title">Trabajadores de @t.Nombre</h5>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <label class="form-label">Maximo de trabajadores</label>
+                            <input class="form-control form-control-lg" type="number" min="1" name="maxUsuarios" value="@t.MaxUsuarios" />
+                            <div class="form-text">Este limite aplica solo a empleados internos. Los clientes no tienen limite.</div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-link" data-bs-dismiss="modal">Cancelar</button>
+                            <button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar limite</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
 }
