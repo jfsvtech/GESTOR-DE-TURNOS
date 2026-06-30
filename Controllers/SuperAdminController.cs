@@ -209,6 +209,7 @@ public class SuperAdminController : Controller
         if (empresa is null) return NotFound();
 
         empresa.Plan = vm.Plan;
+        empresa.CicloSuscripcion = vm.CicloSuscripcion;
         empresa.ValorSuscripcion = vm.ValorSuscripcion;
         empresa.EstadoSuscripcion = vm.EstadoSuscripcion;
         empresa.SuscripcionInicio = vm.SuscripcionInicio;
@@ -216,7 +217,7 @@ public class SuperAdminController : Controller
         empresa.RecordatorioPagoDias = vm.RecordatorioPagoDias;
         await _tenants.UpdateSuscripcionAsync(empresa);
         await Auditar(id, "Actualizar suscripcion", "Tenant", id,
-            $"Plan {vm.Plan}, valor ${vm.ValorSuscripcion:#,##0}, estado {vm.EstadoSuscripcion}, vence {vm.SuscripcionVencimiento:yyyy-MM-dd}");
+            $"Plan {vm.Plan}, ciclo {vm.CicloSuscripcion}, valor ${vm.ValorSuscripcion:#,##0}, estado {vm.EstadoSuscripcion}, vence {vm.SuscripcionVencimiento:yyyy-MM-dd}");
         TempData["Ok"] = "Suscripcion actualizada.";
         return RedirectToAction(nameof(Empresa), new { id });
     }
@@ -315,6 +316,49 @@ public class SuperAdminController : Controller
     }
 
     [Authorize(Roles = "SuperAdmin")]
+    [HttpPost("empresa/{tenantId:int}/usuarios/{userId:int}/editar")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditarUsuario(int tenantId, int userId, UsuarioInternoFormVm vm)
+    {
+        var usuario = await _usuarios.GetByIdInTenantAsync(tenantId, userId);
+        if (usuario is null) return NotFound();
+
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = "Revisa nombre, correo, telefono y rol.";
+            return RedirectToAction(nameof(Empresa), new { id = tenantId });
+        }
+
+        var email = vm.Email.Trim();
+        var emailOwner = await _usuarios.GetByEmailAsync(tenantId, email);
+        if (emailOwner is not null && emailOwner.Id != userId)
+        {
+            TempData["Error"] = "Ese correo ya pertenece a otro usuario de la empresa.";
+            return RedirectToAction(nameof(Empresa), new { id = tenantId });
+        }
+
+        await _usuarios.UpdateInternalAsync(new Usuario
+        {
+            Id = userId,
+            TenantId = tenantId,
+            Nombre = vm.Nombre.Trim(),
+            Cedula = string.IsNullOrWhiteSpace(vm.Cedula) ? null : vm.Cedula.Trim(),
+            Email = email,
+            Telefono = vm.Telefono.Trim(),
+            Rol = vm.Rol,
+            Activo = vm.Activo,
+            Atiende = vm.Rol == Rol.Barbero || (vm.Rol == Rol.Dueno && usuario.Atiende)
+        });
+
+        if (!string.IsNullOrWhiteSpace(vm.Password))
+            await _usuarios.UpdatePasswordAsync(userId, BCrypt.Net.BCrypt.HashPassword(vm.Password));
+
+        await Auditar(tenantId, "Editar usuario", "Usuario", userId, $"{vm.Nombre} ({vm.Rol}), activo {vm.Activo}");
+        TempData["Ok"] = "Usuario editado.";
+        return RedirectToAction(nameof(Empresa), new { id = tenantId });
+    }
+
+    [Authorize(Roles = "SuperAdmin")]
     [HttpPost("empresa/{tenantId:int}/usuarios/{userId:int}/eliminar")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EliminarUsuario(int tenantId, int userId)
@@ -377,10 +421,10 @@ public class SuperAdminController : Controller
         {
         tenantId = await _tenants.CreateAsync(new Tenant
         {
-            Nombre = vm.Nombre.Trim(), Slug = slug, Plan = vm.Plan,
+            Nombre = vm.Nombre.Trim(), Slug = slug, Plan = vm.Plan, CicloSuscripcion = vm.CicloSuscripcion,
             ValorSuscripcion = vm.ValorSuscripcion,
             SuscripcionInicio = DateTime.Today,
-            SuscripcionVencimiento = DateTime.Today.AddMonths(1),
+            SuscripcionVencimiento = DateTime.Today.AddMonths(MesesPorCiclo(vm.CicloSuscripcion)),
             EstadoSuscripcion = "Activo",
             MaxUsuarios = vm.MaxUsuarios, Activo = true
         });
@@ -468,6 +512,13 @@ public class SuperAdminController : Controller
         if (value.Length <= 8) return "********";
         return $"{value[..4]}...{value[^4..]}";
     }
+
+    private static int MesesPorCiclo(string? ciclo) => (ciclo ?? "").Trim().ToLowerInvariant() switch
+    {
+        "trimestral" => 3,
+        "anual" => 12,
+        _ => 1
+    };
 
     private string TenantUrl(string slug, string path = "/")
     {

@@ -33,6 +33,13 @@
                         </select>
                     </div>
                     <div class="col-md-5 mb-3">
+                        <label asp-for="CicloSuscripcion" class="form-label"></label>
+                        <select asp-for="CicloSuscripcion" class="form-select">
+                            <option>Mensual</option><option>Trimestral</option><option>Anual</option>
+                        </select>
+                        <div class="form-text">Contrato del plan; los pagos pueden registrarse mensual.</div>
+                    </div>
+                    <div class="col-md-5 mb-3">
                         <label asp-for="ValorSuscripcion" class="form-label"></label>
                         <input asp-for="ValorSuscripcion" type="text" inputmode="numeric" class="form-control js-money" />
                         <span asp-validation-for="ValorSuscripcion" class="text-danger small"></span>

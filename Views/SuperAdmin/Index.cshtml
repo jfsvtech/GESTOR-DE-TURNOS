@@ -127,7 +127,7 @@ else
                 <td><span class="badge bg-@estadoClase">@(t.Activo ? "Activa" : "Suspendida")</span></td>
                 <td>
                     <strong>@t.Plan</strong>
-                    <div class="small text-muted">@t.EstadoSuscripcion</div>
+                    <div class="small text-muted">@t.CicloSuscripcion - @t.EstadoSuscripcion</div>
                 </td>
                 <td>$@t.ValorSuscripcion.ToString("#,##0")</td>
                 <td>@vence</td>

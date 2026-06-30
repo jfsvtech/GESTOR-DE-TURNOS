@@ -205,6 +205,8 @@ public class TenantFormVm
     public string Slug { get; set; } = "";
     [Display(Name = "Plan")]
     public string Plan { get; set; } = "Basico";
+    [Display(Name = "Ciclo de contrato")]
+    public string CicloSuscripcion { get; set; } = "Mensual";
     [Range(0, 999999999, ErrorMessage = "Valor de suscripcion invalido")]
     [Display(Name = "Valor mensual de suscripcion")]
     public decimal ValorSuscripcion { get; set; }
@@ -295,6 +297,7 @@ public class SuperAdminEmpresaDetalleVm
 public class UsuarioInternoFormVm
 {
     public int TenantId { get; set; }
+    public int Id { get; set; }
     [Required] public string Nombre { get; set; } = "";
     public string? Cedula { get; set; }
     [Required, EmailAddress] public string Email { get; set; } = "";
@@ -308,6 +311,7 @@ public class SuscripcionFormVm
 {
     public int TenantId { get; set; }
     [Required] public string Plan { get; set; } = "Basico";
+    [Required] public string CicloSuscripcion { get; set; } = "Mensual";
     [Range(0, 999999999)] public decimal ValorSuscripcion { get; set; }
     [Required] public string EstadoSuscripcion { get; set; } = "Activo";
     public DateTime? SuscripcionInicio { get; set; }

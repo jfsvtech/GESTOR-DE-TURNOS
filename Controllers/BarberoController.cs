@@ -46,6 +46,8 @@ public class BarberoController : TenantBaseController
     {
         if (GuardTenant() is { } r) return r;
         var hoy = DateTime.Today;
+        var usuario = await _usuarios.GetByIdInTenantAsync(TenantId, CurrentUserId);
+        ViewBag.Atiende = usuario?.Atiende ?? false;
         var agenda = await _turnos.GetByEmpleadoRangoAsync(TenantId, CurrentUserId, hoy, hoy.AddDays(1));
         var proximo = agenda
             .Where(t => t.FechaHoraInicio >= DateTime.Now && t.Estado is not EstadoTurno.Cancelado and not EstadoTurno.Completado)

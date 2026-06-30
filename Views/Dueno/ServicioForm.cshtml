@@ -34,9 +34,15 @@
                         <span asp-validation-for="Precio" class="text-danger small"></span>
                     </div>
                 </div>
-                <div class="form-check form-switch mb-3">
-                    <input asp-for="Activo" class="form-check-input" />
-                    <label asp-for="Activo" class="form-check-label">Activo</label>
+                <div class="status-toggle-panel mb-3">
+                    <div>
+                        <strong>Servicio activo</strong>
+                        <p class="page-sub small mb-0">Si esta activo, los clientes podran reservarlo y los profesionales podran prestarlo.</p>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input asp-for="Activo" class="form-check-input" />
+                        <label asp-for="Activo" class="form-check-label">Disponible</label>
+                    </div>
                 </div>
                 <button class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Guardar</button>
                 <a class="btn btn-link" asp-action="Servicios" asp-route-slug="@slug">Cancelar</a>

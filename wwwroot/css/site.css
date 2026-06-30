@@ -5856,6 +5856,71 @@ canvas {
     background: color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
+.status-toggle-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--bg-secondary);
+}
+
+.status-toggle-panel .form-switch {
+    min-width: 130px;
+    padding-left: 3rem;
+}
+
+.status-toggle-panel .form-check-input {
+    width: 3rem;
+    height: 1.55rem;
+    margin-left: -3rem;
+}
+
+.fc {
+    color: var(--text-main);
+}
+
+.fc .fc-toolbar {
+    gap: .75rem;
+    flex-wrap: wrap;
+}
+
+.fc .fc-button {
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+    background: var(--bg-secondary) !important;
+    color: var(--text-main) !important;
+    box-shadow: none !important;
+    font-weight: 800 !important;
+}
+
+.fc .fc-button:hover,
+.fc .fc-button:focus {
+    border-color: var(--primary) !important;
+    background: color-mix(in srgb, var(--primary) 12%, var(--bg-secondary)) !important;
+    color: var(--primary) !important;
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active {
+    border-color: var(--primary) !important;
+    background: var(--primary) !important;
+    color: #fff !important;
+}
+
+.fc .fc-col-header-cell,
+.fc .fc-timegrid-axis,
+.fc .fc-scrollgrid,
+.fc .fc-theme-standard td,
+.fc .fc-theme-standard th {
+    border-color: var(--border) !important;
+}
+
+.fc .fc-day-today {
+    background: color-mix(in srgb, var(--primary) 8%, transparent) !important;
+}
+
 @media (max-width: 991.98px) {
     .saas-login-shell,
     .saas-dashboard-hero {

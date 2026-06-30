@@ -152,6 +152,7 @@ public class SaasTenantResumen
     public string Nombre { get; set; } = "";
     public string Slug { get; set; } = "";
     public string Plan { get; set; } = "";
+    public string CicloSuscripcion { get; set; } = "Mensual";
     public decimal ValorSuscripcion { get; set; }
     public int MaxUsuarios { get; set; }
     public bool Activo { get; set; }
