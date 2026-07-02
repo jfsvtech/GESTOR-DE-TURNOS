@@ -42,6 +42,9 @@ public class DuenoController : TenantBaseController
     private IActionResult? GuardTenant()
         => UsuarioPerteneceAlTenant() ? null : RedirectToAction("Login", "Account", new { slug = Slug });
 
+    private static bool EsProfesionalConfigurable(Usuario usuario)
+        => usuario.Rol == Rol.Barbero || (usuario.Rol == Rol.Dueno && usuario.Atiende);
+
     // ---------------- Dashboard ----------------
     [HttpGet("")]
     public async Task<IActionResult> Index(DateTime? desde, DateTime? hasta)
@@ -131,7 +134,9 @@ public class DuenoController : TenantBaseController
     {
         if (GuardTenant() is { } r) return r;
         var servicios = await _servicios.GetByTenantAsync(TenantId);
-        var profesionales = await _usuarios.GetByRolAsync(TenantId, Rol.Barbero, soloActivos: false);
+        var profesionales = (await _usuarios.GetByTenantAsync(TenantId))
+            .Where(EsProfesionalConfigurable)
+            .ToList();
         var publicUrl = $"{Request.Scheme}://{Request.Host}/{Slug}";
         ViewBag.PublicUrl = publicUrl;
         ViewBag.QrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=320x320&data=" + Uri.EscapeDataString(publicUrl);
@@ -335,7 +340,12 @@ public class DuenoController : TenantBaseController
         if (GuardTenant() is { } r) return r;
         var yo = await _usuarios.GetByIdInTenantAsync(TenantId, CurrentUserId);
         ViewBag.YoAtiendo = yo?.Atiende ?? false;
-        return View(await _usuarios.GetByRolAsync(TenantId, Rol.Barbero, soloActivos: false));
+        var profesionales = (await _usuarios.GetByTenantAsync(TenantId))
+            .Where(EsProfesionalConfigurable)
+            .OrderByDescending(u => u.Id == CurrentUserId)
+            .ThenBy(u => u.Nombre)
+            .ToList();
+        return View(profesionales);
     }
 
     [HttpPost("profesionales/{id:int}/activo")]
@@ -363,9 +373,10 @@ public class DuenoController : TenantBaseController
     {
         if (GuardTenant() is { } r) return r;
         var u = await _usuarios.GetByIdInTenantAsync(TenantId, id);
-        if (u is null || u.Rol != Rol.Barbero) return NotFound();
+        if (u is null || !EsProfesionalConfigurable(u)) return NotFound();
         ViewBag.Servicios = await _servicios.GetByTenantAsync(TenantId, soloActivos: true);
         ViewBag.FotoActual = u.FotoUrl;
+        ViewBag.EsDuenoProfesional = u.Rol == Rol.Dueno;
         return View("ProfesionalForm", new BarberoFormVm
         {
             Id = u.Id, Nombre = u.Nombre, Cedula = u.Cedula ?? "", Telefono = u.Telefono ?? "",
@@ -384,6 +395,12 @@ public class DuenoController : TenantBaseController
         async Task<IActionResult> Recargar()
         {
             ViewBag.Servicios = await _servicios.GetByTenantAsync(TenantId, soloActivos: true);
+            if (vm.Id != 0)
+            {
+                var usuario = await _usuarios.GetByIdInTenantAsync(TenantId, vm.Id);
+                ViewBag.FotoActual = usuario?.FotoUrl;
+                ViewBag.EsDuenoProfesional = usuario?.Rol == Rol.Dueno;
+            }
             return View("ProfesionalForm", vm);
         }
 
@@ -431,8 +448,13 @@ public class DuenoController : TenantBaseController
         else
         {
             var u = await _usuarios.GetByIdInTenantAsync(TenantId, vm.Id);
-            if (u is null) return NotFound();
+            if (u is null || !EsProfesionalConfigurable(u)) return NotFound();
             u.Nombre = vm.Nombre.Trim(); u.Telefono = vm.Telefono.Trim(); u.Email = vm.Email; u.Activo = vm.Activo;
+            if (u.Rol == Rol.Dueno)
+            {
+                u.Atiende = true;
+                u.Activo = true;
+            }
             await _usuarios.UpdateAsync(u);
             if (!string.IsNullOrWhiteSpace(vm.Password))
                 await _usuarios.UpdatePasswordAsync(u.Id, BCrypt.Net.BCrypt.HashPassword(vm.Password));
@@ -473,7 +495,7 @@ public class DuenoController : TenantBaseController
     {
         if (GuardTenant() is { } r) return r;
         var u = await _usuarios.GetByIdInTenantAsync(TenantId, id);
-        if (u is null || u.Rol != Rol.Barbero) return NotFound();
+        if (u is null || !EsProfesionalConfigurable(u)) return NotFound();
         ViewBag.Empleado = u;
         ViewBag.Dias = DiasNombre;
         return View(await _agenda.GetHorariosAsync(TenantId, id));
@@ -485,7 +507,7 @@ public class DuenoController : TenantBaseController
     {
         if (GuardTenant() is { } r) return r;
         var u = await _usuarios.GetByIdInTenantAsync(TenantId, id);
-        if (u is null || u.Rol != Rol.Barbero) return NotFound();
+        if (u is null || !EsProfesionalConfigurable(u)) return NotFound();
 
         var horarios = new List<HorarioTrabajo>();
         for (int i = 0; i < (dia?.Length ?? 0); i++)
@@ -511,7 +533,7 @@ public class DuenoController : TenantBaseController
     {
         if (GuardTenant() is { } r) return r;
         var u = await _usuarios.GetByIdInTenantAsync(TenantId, id);
-        if (u is null || u.Rol != Rol.Barbero) return NotFound();
+        if (u is null || !EsProfesionalConfigurable(u)) return NotFound();
 
         if (diaSemana < 0 || diaSemana > 6
             || !TimeOnly.TryParse(horaInicio, out var hi)
