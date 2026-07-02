@@ -29,24 +29,41 @@ public class TenantRepository : ITenantRepository
     private readonly IDbConnectionFactory _db;
     public TenantRepository(IDbConnectionFactory db) => _db = db;
 
+    private const string TenantColumns = @"
+        id,
+        nombre,
+        slug,
+        plan,
+        ciclo_suscripcion,
+        time_zone_id,
+        valor_suscripcion,
+        max_usuarios,
+        activo,
+        foto_url,
+        suscripcion_inicio::timestamp AS suscripcion_inicio,
+        suscripcion_vencimiento::timestamp AS suscripcion_vencimiento,
+        estado_suscripcion,
+        recordatorio_pago_dias,
+        fecha_creacion";
+
     public async Task<Tenant?> GetBySlugAsync(string slug)
     {
         using var c = _db.Create();
         return await c.QuerySingleOrDefaultAsync<Tenant>(
-            "SELECT * FROM tenants WHERE lower(slug) = lower(@slug) LIMIT 1", new { slug });
+            $"SELECT {TenantColumns} FROM tenants WHERE lower(slug) = lower(@slug) LIMIT 1", new { slug });
     }
 
     public async Task<Tenant?> GetByIdAsync(int id)
     {
         using var c = _db.Create();
         return await c.QuerySingleOrDefaultAsync<Tenant>(
-            "SELECT * FROM tenants WHERE id = @id", new { id });
+            $"SELECT {TenantColumns} FROM tenants WHERE id = @id", new { id });
     }
 
     public async Task<List<Tenant>> GetAllAsync()
     {
         using var c = _db.Create();
-        var r = await c.QueryAsync<Tenant>("SELECT * FROM tenants ORDER BY nombre");
+        var r = await c.QueryAsync<Tenant>($"SELECT {TenantColumns} FROM tenants ORDER BY nombre");
         return r.ToList();
     }
 
@@ -64,7 +81,7 @@ public class TenantRepository : ITenantRepository
                 t.valor_suscripcion,
                 t.max_usuarios,
                 t.activo,
-                t.suscripcion_vencimiento,
+                t.suscripcion_vencimiento::timestamp AS suscripcion_vencimiento,
                 t.estado_suscripcion,
                 t.fecha_creacion,
                 COALESCE(u.usuarios, 0) AS usuarios,
@@ -158,8 +175,19 @@ public class TenantRepository : ITenantRepository
     public async Task<List<PagoSuscripcion>> GetPagosAsync(int tenantId)
     {
         using var c = _db.Create();
-        var r = await c.QueryAsync<PagoSuscripcion>(
-            "SELECT * FROM pagos_suscripcion WHERE tenant_id=@tenantId ORDER BY fecha_pago DESC",
+        var r = await c.QueryAsync<PagoSuscripcion>(@"
+            SELECT id,
+                   tenant_id,
+                   monto,
+                   periodo_inicio::timestamp AS periodo_inicio,
+                   periodo_fin::timestamp AS periodo_fin,
+                   metodo,
+                   referencia,
+                   nota,
+                   fecha_pago
+            FROM pagos_suscripcion
+            WHERE tenant_id=@tenantId
+            ORDER BY fecha_pago DESC",
             new { tenantId });
         return r.ToList();
     }

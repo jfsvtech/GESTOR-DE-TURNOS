@@ -110,7 +110,10 @@ builder.Services.AddRateLimiter(options =>
 });
 
 // ---- DataProtection (claves persistidas para que las cookies sobrevivan reinicios) ----
-var keysDir = Path.Combine(builder.Environment.ContentRootPath, "keys");
+var configuredKeysDir = builder.Configuration["App:DataProtectionKeysPath"];
+var keysDir = string.IsNullOrWhiteSpace(configuredKeysDir)
+    ? Path.Combine(builder.Environment.ContentRootPath, "keys")
+    : configuredKeysDir;
 Directory.CreateDirectory(keysDir);
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(keysDir))
